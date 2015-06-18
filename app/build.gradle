@@ -38,9 +38,10 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.google.android.gms:play-services:6.1.71'
-    compile 'com.android.support:support-v4:21.0.2'
-    compile 'com.google.maps.android:android-maps-utils:0.3.2'
     compile project(':SimpleKML')
     compile files('libs/acra-4.5.0.jar')
-    }
+    compile 'com.google.android.gms:play-services:6.5.87'
+    compile 'com.android.support:support-v4:21.0.3'
+    compile 'com.google.maps.android:android-maps-utils:0.3.2'
+    compile 'com.android.support:appcompat-v7:21.0.3'
+}
