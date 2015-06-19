@@ -3,10 +3,13 @@
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email address</string>
-    <string name="prompt_id">Participant ID</string>
+    <string name="prompt_name">First name</string>
     <string name="action_sign_in">Register</string>
     <string name="action_sign_in_short">Register</string>
 
+    <string name="registerhead"><b>Register Your Device</b>\nEnter your email address and name below.</string>
     <string name="error_invalid_email">This email address is invalid</string>
     <string name="error_field_required">This field is required</string>
+    <string name="finish_button">Finish</string>
+    <string name="new_device_button">Register New Device</string>
 </resources>

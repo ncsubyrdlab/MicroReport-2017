@@ -173,6 +173,10 @@ public class MainActivity extends Activity {
                 intent = new Intent(Intent.ACTION_VIEW, webpage);
                 startActivity(intent);
                 return true;
+            case R.id.action_register:
+                intent = new Intent(this, LoginActivity.class);
+                startActivity(intent);
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }

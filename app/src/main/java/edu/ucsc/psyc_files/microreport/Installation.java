@@ -1,6 +1,7 @@
 package edu.ucsc.psyc_files.microreport;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 
 import com.google.android.gms.analytics.GoogleAnalytics;
 import com.google.android.gms.analytics.Tracker;
@@ -23,13 +24,15 @@ public class Installation {
         private static String sID = null;
         private static final String INSTALLATION = "INSTALLATION";
 
-        public synchronized static String id(Context context) {
+
+    public synchronized static String id(Context context) {
             if (sID == null) {
                 File installation = new File(context.getFilesDir(), INSTALLATION);
                 try {
                     if (!installation.exists())
                         writeInstallationFile(installation);
                     sID = readInstallationFile(installation);
+                   //setSharedPreferences();
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -54,4 +57,14 @@ public class Installation {
             out.write(id.getBytes());
             out.close();
         }
+
+        private static void setSharedPreferences() {
+        //save installation ID and registration status to sharedpreferences
+        SharedPreferences preferenceSettings;
+        SharedPreferences.Editor preferenceEditor;
+
+        //preferenceSettings = getPreferences(PREFERENCE_MODE_PRIVATE);
+        //preferenceEditor = preferenceSettings.edit();
+        //preferenceEditor.putBoolean("registered", false);
+    }
 }

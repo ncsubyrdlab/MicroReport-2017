@@ -28,4 +28,10 @@
         android:orderInCategory="400"
         android:showAsAction="never"
         tools:ignore="AppCompatResource" />
+    <item android:id="@+id/action_register"
+        android:title="@string/action_register"
+        android:contentDescription="@string/action_register"
+        android:orderInCategory="500"
+        android:showAsAction="never"
+        tools:ignore="AppCompatResource" />
 </menu>

@@ -6,9 +6,12 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.LoaderManager.LoaderCallbacks;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Loader;
+import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build.VERSION;
@@ -27,7 +30,10 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -36,34 +42,46 @@ import java.util.List;
 
 
 /**
- * Registration screen asking for email and participant ID, sends those along with Installation ID
+ * Registration screen asking for email and name, assigns participant ID, sends those along with Installation ID
  * Based on Login Activity template
  */
 public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
 
-        /**
+    /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
     private UserLoginTask mAuthTask = null;
 
     // UI references.
     private AutoCompleteTextView mEmailView;
-    private EditText mPartIDView;
+    private EditText mFnameView;
+    private TextView mResult;
     private View mProgressView;
     private View mLoginFormView;
+    private Button mRegisterButton;
+    private Button mFinishButton;
+    private Button mNewButton;
+    private SharedPreferences preferenceSettings;
+    private SharedPreferences.Editor preferenceEditor;
 
-    @Override
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+        //todo: restore result and buttons on orientation change
+
+        //check internet connection
+        if (!isNetworkConnected()) {
+            Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
+        }
 
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
 
-        mPartIDView = (EditText) findViewById(R.id.password);
-        mPartIDView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        mFnameView = (EditText) findViewById(R.id.fname);
+        mFnameView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
                 if (id == R.id.login || id == EditorInfo.IME_NULL) {
@@ -110,20 +128,20 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
 
         // Reset errors.
         mEmailView.setError(null);
-        mPartIDView.setError(null);
+        mFnameView.setError(null);
 
         // Store values at the time of the login attempt.
         String email = mEmailView.getText().toString();
-        String partid = mPartIDView.getText().toString();
+        String fname = mFnameView.getText().toString();
 
         boolean cancel = false;
         View focusView = null;
 
 
         // Check if the user entered an ID
-        if (TextUtils.isEmpty(partid)) {
-            mPartIDView.setError(getString(R.string.error_field_required));
-            focusView = mPartIDView;
+        if (TextUtils.isEmpty(fname)) {
+            mFnameView.setError(getString(R.string.error_field_required));
+            focusView = mFnameView;
             cancel = true;
         }
 
@@ -144,11 +162,10 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
             focusView.requestFocus();
         } else {
             // Show a progress spinner, and kick off a background task to
-            // perform the user login attempt.
+            // perform the user registration attempt.
             showProgress(true);
             String androidId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
-            String output = email + "\t" + partid + "\t" + Installation.id(this) + "\t" + androidId;
-            mAuthTask = new UserLoginTask(output);
+            mAuthTask = new UserLoginTask(email, fname, Installation.id(this), androidId, false);
             mAuthTask.execute((Void) null);
         }
     }
@@ -284,38 +301,65 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
      */
     public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
 
-        private final String mOutput;
+        private final String mEmail;
+        private final String mFname;
+        private final String mInstallid;
+        private final String mAndroidid;
+        private String result;
+        private boolean mNewDevice;
 
-        UserLoginTask(String output) {
-            mOutput = output;
+        UserLoginTask(String email, String fname, String installid, String androidid, boolean newDevice) {
+            mEmail = email;
+            mFname = fname;
+            mInstallid = installid;
+            mAndroidid = androidid;
+            mNewDevice = newDevice;
         }
 
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            //send email, participant ID, installation number, and Android ID to file
+            //send email, installation number, and Android ID to file
+            //server generates participant ID and sends back
+            //change so that returns response from server "Registration Complete" etc.
+            //save participant ID and email to shared preferences
 
             try {
-                URL url = new URL("http://people.ucsc.edu/~cmbyrd/microreport/registerdevice.php");
+                //todo: change the URL
+                URL url = new URL("http://people.ucsc.edu/~cmbyrd/testdb/register.php");
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
                 con.setDoOutput(true);
                 con.setChunkedStreamingMode(0);
                 String basicAuth = "Basic " + new String(Base64.encode("MRapp:sj8719i".getBytes(), Base64.DEFAULT));
                 con.setRequestProperty("Authorization", basicAuth);
+
+                //attempt to register user
                 OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
-                out.write("output="+Uri.encode(mOutput));
+                out.write("email=" + Uri.encode(mEmail) + "&fname=" + Uri.encode(mFname) + "&installID=" + Uri.encode(mInstallid) + "&deviceID=" + Uri.encode(mAndroidid)+ "&newDevice=" + mNewDevice);
                 out.close();
 
                 if (con.getResponseCode() == 200) {
+                    BufferedReader reader = null;
+                    StringBuilder stringBuilder;
+                    reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                    stringBuilder = new StringBuilder();
+                    String line = null;
+                    while ((line = reader.readLine()) != null) {
+                        stringBuilder.append(line + "\n");
+                    }
+                    result = stringBuilder.toString();
+
                     con.disconnect();
                     return true;
                 } else {
                     con.disconnect();
+                    result = "Unable to open connection to URL";
                     return false;
                 }
 
             } catch (Exception ex) {
-                return false;
+                result = "Exception: " + ex;
+                return true;
             }
 
         }
@@ -324,12 +368,69 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
         protected void onPostExecute(final Boolean success) {
             mAuthTask = null;
             showProgress(false);
-
+            mResult = (TextView) findViewById(R.id.result);
+            mResult.setText(result);
+            mResult.setContentDescription(result);
             if (success) {
-                finish();
+
+                //todo: add back button to action bar
+                //todo: make keyboard go away after submitting
+                //check result
+
+                if (result.contains("Registration Complete") || result.contains("The device is already registered")) {
+                    //hide register button and show finish button
+                    mRegisterButton = (Button) findViewById(R.id.email_sign_in_button);
+                    mRegisterButton.setVisibility(View.GONE);
+                    mFinishButton = (Button) findViewById(R.id.finish_button);
+                    mFinishButton.setVisibility(View.VISIBLE);
+                    mFinishButton.setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            finish();
+                        }
+                    });
+                    //save participantID and email in sharedpreferences
+                    String partID = result.substring((result.length() - 7), result.length());
+                    //mFinishButton.setText(partID);
+                    preferenceSettings = getPreferences(MODE_PRIVATE);
+                    preferenceEditor = preferenceSettings.edit();
+                    preferenceEditor.putBoolean("registered", true);
+                    preferenceEditor.putString("partID", partID);
+                    preferenceEditor.putString("emailAddress", mEmail);
+                    preferenceEditor.apply();
+
+                } else if (result.contains("The email address is already registered")) {
+                    //show button to register new device and finish button, hide register button
+                    mRegisterButton = (Button) findViewById(R.id.email_sign_in_button);
+                    mRegisterButton.setVisibility(View.GONE);
+                    mNewButton = (Button) findViewById(R.id.new_device_button);
+                    mNewButton.setVisibility(View.VISIBLE);
+                    mNewButton.setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            //when click, register new device and overwrite(?) old registration
+                            //todo: fix registration of new device
+                            registerNewDevice(mEmail);
+                        }
+                    });
+                    mFinishButton = (Button) findViewById(R.id.finish_button);
+                    mFinishButton.setVisibility(View.VISIBLE);
+                    mFinishButton.setText("Cancel");
+                    mFinishButton.setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            finish();
+                        }
+                    });
+
+
+                } else if (result.contains("Unable to Complete Registration")) {
+
+                }
+
             } else {
-                mPartIDView.setError("There was an error");
-                mPartIDView.requestFocus();
+                mFnameView.setError("There was an error");
+                mFnameView.requestFocus();
             }
         }
 
@@ -338,7 +439,25 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
             mAuthTask = null;
             showProgress(false);
         }
+
+
     }
+
+    private boolean isNetworkConnected() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        return (cm.getActiveNetworkInfo() != null);
+    }
+
+    private void registerNewDevice(String email) {
+        // Show a progress spinner, and kick off a background task to
+        // perform the user registration attempt.
+        showProgress(true);
+        String androidId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+        mAuthTask = new UserLoginTask(email, null, Installation.id(this), androidId, true);
+        mAuthTask.execute((Void) null);
+    }
+
+
 }
 
 

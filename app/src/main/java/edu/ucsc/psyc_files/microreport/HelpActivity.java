@@ -2,11 +2,13 @@ package edu.ucsc.psyc_files.microreport;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
@@ -14,11 +16,25 @@ import com.google.android.gms.analytics.Tracker;
 /**Shows campus resources and a short FAQ on the app*/
 public class HelpActivity extends Activity {
 
+    private SharedPreferences preferenceSettings;
+    //private SharedPreferences.Editor preferenceEditor;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_help);
         getActionBar().setDisplayHomeAsUpEnabled(true);
+
+        TextView settings = (TextView) findViewById(R.id.settings);
+
+        //show if installation has been registered
+        preferenceSettings = getPreferences(MODE_PRIVATE);
+        String partid = preferenceSettings.getString("partID", "Device has not been registered");
+        String email = preferenceSettings.getString("emailAddress","");
+        String settings_text = "MicroReport v. 2\nParticipant ID: "+ partid +
+        "\nParticipant Email: " + email;
+        settings.setText(settings_text);
+        settings.setContentDescription(settings_text);
 
     }
 

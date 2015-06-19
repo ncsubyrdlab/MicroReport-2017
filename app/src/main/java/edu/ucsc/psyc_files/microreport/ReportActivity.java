@@ -22,11 +22,13 @@ import android.widget.Toast;
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
+import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -46,17 +48,16 @@ import java.util.Date;
  * is started when the activity starts and stops when the activity is no longer visible.
  */
 public class ReportActivity extends Activity implements
-        GooglePlayServicesClient.ConnectionCallbacks,
-        GooglePlayServicesClient.OnConnectionFailedListener, LocationListener {
+        ConnectionCallbacks,
+        OnConnectionFailedListener, LocationListener {
 
     private String draftreport;
     private String formattedreport;
     public final static String EXTRA_DRAFT = "edu.ucsc.psyc_files.microreport.DRAFT";
     public final static String EXTRA_DATA = "edu.ucsc.psyc_files.microreport.DATA";
     private GoogleMap mMap;
-    private LocationClient mLocationClient;
+    private GoogleApiClient mGoogleApiClient;
     private Location mCurrentLocation;
-    private LocationRequest mLocationRequest;
     private static final int MILLISECONDS_PER_SECOND = 1000;
     public static final int UPDATE_INTERVAL_IN_SECONDS = 30;
     private static final long UPDATE_INTERVAL =
@@ -82,20 +83,19 @@ public class ReportActivity extends Activity implements
 
         //check to Google Play Services is installed
         checkGooglePlay();
-        
+
+        //set up location client
+        buildGoogleApiClient();
+
         //checks for location enabled
         LocationManager manager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         locationEnabled = !(!manager.isProviderEnabled(LocationManager.GPS_PROVIDER) && !manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER));
 
         //Create a new location client, using the enclosing class to handle callbacks.
-        mLocationClient = new LocationClient(this, this, this);
-        mLocationRequest = new LocationRequest();
-        // Use high accuracy if possible
+        LocationRequest mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(10000);
+        mLocationRequest.setFastestInterval(5000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        // Set the update interval to 30 seconds
-        mLocationRequest.setInterval(UPDATE_INTERVAL);
-        // Set the fastest update interval to 1 second
-        mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
 
         //sets up map
         mMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map)).getMap();
@@ -117,6 +117,15 @@ public class ReportActivity extends Activity implements
 
     }
 
+    //set up location client
+    protected synchronized void buildGoogleApiClient() {
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+    }
+
     private boolean isNetworkConnected() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         return (cm.getActiveNetworkInfo() != null);
@@ -125,7 +134,7 @@ public class ReportActivity extends Activity implements
     @Override
     protected void onStart() {
         super.onStart();
-      mLocationClient.connect();
+        mGoogleApiClient.connect();
     }
 
     @Override
@@ -138,9 +147,15 @@ public class ReportActivity extends Activity implements
     @Override
     protected void onStop() {
         super.onStop();
-        mLocationClient.disconnect();
+        mGoogleApiClient.disconnect();
     }
 
+    @Override
+    public void onConnectionSuspended(int cause) {
+        // The connection has been interrupted.
+        // todo: Disable any UI components that depend on Google APIs
+        // until onConnected() is called.
+    }
     private void setUpMapIfNeeded() {
         if (mMap == null) {
             mMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map))
@@ -160,7 +175,8 @@ public class ReportActivity extends Activity implements
         if (checkbox.isChecked()){
             if (locationEnabled) {
                 //get location update and set (works without this line but might be helpful)
-                mCurrentLocation = mLocationClient.getLastLocation();
+                mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(
+                        mGoogleApiClient);
 
                 //cannot get location at the moment
                 if (mCurrentLocation == null) {
@@ -421,26 +437,18 @@ public class ReportActivity extends Activity implements
      */
     @Override
     public void onConnected(Bundle dataBundle) {
-        mCurrentLocation = mLocationClient.getLastLocation();
+        mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(
+                mGoogleApiClient);
          if (locationEnabled) {
             if (mCurrentLocation == null) {
-                mLocationClient.requestLocationUpdates(mLocationRequest, this);
+                mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(
+                        mGoogleApiClient);
             } else {
                 lat = mCurrentLocation.getLatitude();
                 longi = mCurrentLocation.getLongitude();
              }
         }
       }
-
-    /*
-     * Called by Location Services if the connection to the
-     * location client drops because of an error.
-     */
-    @Override
-    public void onDisconnected() {
-        Toast.makeText(this, "Disconnected. Please try again.",
-                Toast.LENGTH_SHORT).show();
-    }
 
     /*
      * Called by Location Services if the attempt to
@@ -453,7 +461,7 @@ public class ReportActivity extends Activity implements
 
     @Override
     public void onLocationChanged(Location location) {
-        mLocationClient.removeLocationUpdates(this);
+        mCurrentLocation = location;
         // necessary to implement this even if don't use it
     }
 
