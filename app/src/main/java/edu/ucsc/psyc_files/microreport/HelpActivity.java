@@ -17,7 +17,6 @@ import com.google.android.gms.analytics.Tracker;
 public class HelpActivity extends Activity {
 
     private SharedPreferences preferenceSettings;
-    //private SharedPreferences.Editor preferenceEditor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,11 +27,12 @@ public class HelpActivity extends Activity {
         TextView settings = (TextView) findViewById(R.id.settings);
 
         //show if installation has been registered
-        preferenceSettings = getPreferences(MODE_PRIVATE);
+        preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+        Boolean reg = preferenceSettings.getBoolean("registered", false);
         String partid = preferenceSettings.getString("partID", "Device has not been registered");
         String email = preferenceSettings.getString("emailAddress","");
         String settings_text = "MicroReport v. 2\nParticipant ID: "+ partid +
-        "\nParticipant Email: " + email;
+        "\nParticipant Email: " + email +"\n";
         settings.setText(settings_text);
         settings.setContentDescription(settings_text);
 

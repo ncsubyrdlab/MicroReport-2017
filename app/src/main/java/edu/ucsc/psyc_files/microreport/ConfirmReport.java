@@ -15,7 +15,9 @@ import android.widget.Toast;
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -25,7 +27,7 @@ import java.net.URL;
  */
 public class ConfirmReport extends Activity {
 
-    private String formatteddata;
+    private String output;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +37,7 @@ public class ConfirmReport extends Activity {
         // Get the report from the intent
         Intent intent = getIntent();
         String reportdraft = intent.getStringExtra(ReportActivity.EXTRA_DRAFT);
-        formatteddata = intent.getStringExtra(ReportActivity.EXTRA_DATA);
+        output = intent.getStringExtra(ReportActivity.EXTRA_DATA);
 
         //set the text to the draft report
         TextView textView = (TextView)findViewById(R.id.reportdraft);
@@ -57,6 +59,8 @@ public class ConfirmReport extends Activity {
             for (File file : files)
                 file.delete();
         }
+        //create an empty file so no file not found error
+        new File(getCacheDir(), "reports.xml");
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
         } else Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
@@ -73,18 +77,33 @@ public class ConfirmReport extends Activity {
     private class postReport extends AsyncTask<Void, Void, String> {
         @Override
         protected String doInBackground(Void... params) {
-
+            String result;
             try {
-                URL url = new URL("http://people.ucsc.edu/~cmbyrd/microreport/postreport.php");
+                //todo: change website
+                URL url = new URL("http://people.ucsc.edu/~cmbyrd/testdb/postreport.php");
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
                 con.setDoOutput(true);
                 con.setChunkedStreamingMode(0);
                 String basicAuth = "Basic " + new String(Base64.encode("MRapp:sj8719i".getBytes(), Base64.DEFAULT));
                 con.setRequestProperty("Authorization", basicAuth);
                 OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
-                out.write("output="+Uri.encode(formatteddata));
+                //output fields created and URI encoded in ReportActivity
+                out.write(output);
                 out.close();
-                String result = con.getResponseMessage();
+
+                if (con.getResponseCode() == 200) {
+                    BufferedReader reader = null;
+                    StringBuilder stringBuilder;
+                    reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                    stringBuilder = new StringBuilder();
+                    String line = null;
+                    while ((line = reader.readLine()) != null) {
+                        stringBuilder.append(line + "\n");
+                    }
+                    result = stringBuilder.toString();
+                } else {
+                    result = con.getResponseMessage();
+                }
                 con.disconnect();
                 return result;
             } catch (Exception ex) {
@@ -99,7 +118,7 @@ public class ConfirmReport extends Activity {
         }
 
     private void toastResult(String result){
-        Toast.makeText(this, "Posting report: "+result, Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, ""+ result, Toast.LENGTH_SHORT).show();
     }
 
     public void goBack(View view) {

@@ -8,8 +8,11 @@ import android.app.LoaderManager.LoaderCallbacks;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.CursorLoader;
+import android.content.Intent;
 import android.content.Loader;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.Uri;
@@ -37,12 +40,20 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.net.ssl.HostnameVerifier;
+import 	javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+
 
 /**
- * Registration screen asking for email and name, assigns participant ID, sends those along with Installation ID
+ * Registration screen asking for email and name, assigns participant ID, sends those along with
+ * Installation ID and Device ID to user file; sets sharedPreferences
+ * Is displayed upon first install and as first screen as long as not registered, no menu option to go to
  * Based on Login Activity template
  */
 public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
@@ -69,41 +80,63 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        //todo: restore result and buttons on orientation change
+        //don't allow orientation changes from portrait
+        int currentOrientation = getResources().getConfiguration().orientation;
+        if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
+        } else {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
+        }
+
+        if (Registered()) {
+            mResult = (TextView) findViewById(R.id.result);
+            mResult.setText("\nDevice has already been registered\n");
+            mResult.setContentDescription("Device has already been registered");
+        }
 
         //check internet connection
         if (!isNetworkConnected()) {
             Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
-        }
+            //todo: do something here, the user will not be able to register or leave this page
+            mResult = (TextView) findViewById(R.id.result);
+            mResult.setText("You need an internet connection to continue. Connect to a network and then click Reload.");
+            mResult.setContentDescription("You need an internet connection to continue. Connect to a network and then click Reload.");
+            mRegisterButton = (Button) findViewById(R.id.email_sign_in_button);
+            mRegisterButton.setVisibility(View.GONE);
+            mFinishButton = (Button) findViewById(R.id.finish_button);
+            mFinishButton.setVisibility(View.VISIBLE);
+            mFinishButton.setText("Reload");
+            mFinishButton.setOnClickListener(finishClickHandler);
+        } else {
 
-        // Set up the login form.
-        mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
-        populateAutoComplete();
+            // Set up the login form.
+            mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
+            populateAutoComplete();
 
-        mFnameView = (EditText) findViewById(R.id.fname);
-        mFnameView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
-                if (id == R.id.login || id == EditorInfo.IME_NULL) {
-                    attemptLogin();
-                    return true;
+            mFnameView = (EditText) findViewById(R.id.fname);
+            mFnameView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+                @Override
+                public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
+                    if (id == R.id.login || id == EditorInfo.IME_NULL) {
+                        attemptLogin();
+                        return true;
+                    }
+                    return false;
                 }
-                return false;
-            }
-        });
+            });
 
-        Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
-        mEmailSignInButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                attemptLogin();
-            }
-        });
+            Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
+            mEmailSignInButton.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    attemptLogin();
+                }
+            });
 
-        mLoginFormView = findViewById(R.id.login_form);
-        mProgressView = findViewById(R.id.login_progress);
+            mLoginFormView = findViewById(R.id.login_form);
+            mProgressView = findViewById(R.id.login_progress);
+        }
     }
-
 
     private void populateAutoComplete() {
         if (VERSION.SDK_INT >= 14) {
@@ -373,31 +406,42 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
             mResult.setContentDescription(result);
             if (success) {
 
-                //todo: add back button to action bar
                 //todo: make keyboard go away after submitting
                 //check result
 
-                if (result.contains("Registration Complete") || result.contains("The device is already registered")) {
-                    //hide register button and show finish button
+                if (result.contains("Registration Complete")) {
+                    //hide register button (and new button if applicable) and show finish button
                     mRegisterButton = (Button) findViewById(R.id.email_sign_in_button);
                     mRegisterButton.setVisibility(View.GONE);
                     mFinishButton = (Button) findViewById(R.id.finish_button);
                     mFinishButton.setVisibility(View.VISIBLE);
-                    mFinishButton.setOnClickListener(new OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            finish();
-                        }
-                    });
+                    mFinishButton.setText("Finish");
+                    mFinishButton.setOnClickListener(finishClickHandler);
+                    mNewButton = (Button) findViewById(R.id.new_device_button);
+                    mNewButton.setVisibility(View.GONE);
                     //save participantID and email in sharedpreferences
-                    String partID = result.substring((result.length() - 7), result.length());
+                    String partID = result.substring((result.length() - 7), result.length()-1);
                     //mFinishButton.setText(partID);
-                    preferenceSettings = getPreferences(MODE_PRIVATE);
+                    preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
                     preferenceEditor = preferenceSettings.edit();
                     preferenceEditor.putBoolean("registered", true);
                     preferenceEditor.putString("partID", partID);
                     preferenceEditor.putString("emailAddress", mEmail);
                     preferenceEditor.apply();
+
+                } else if (result.contains("The device is already registered")) {
+                    //set shared preferences and show finish button
+                    preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+                    preferenceEditor = preferenceSettings.edit();
+                    preferenceEditor.putBoolean("registered", true);
+                    preferenceEditor.apply();
+                    mRegisterButton = (Button) findViewById(R.id.email_sign_in_button);
+                    mRegisterButton.setVisibility(View.GONE);
+                    mFinishButton = (Button) findViewById(R.id.finish_button);
+                    mFinishButton.setVisibility(View.VISIBLE);
+                    mFinishButton.setOnClickListener(finishClickHandler);
+                    mNewButton = (Button) findViewById(R.id.new_device_button);
+                    mNewButton.setVisibility(View.GONE);
 
                 } else if (result.contains("The email address is already registered")) {
                     //show button to register new device and finish button, hide register button
@@ -408,20 +452,14 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                     mNewButton.setOnClickListener(new OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            //when click, register new device and overwrite(?) old registration
-                            //todo: fix registration of new device
+                            //runs script again with "new device flag"
                             registerNewDevice(mEmail);
                         }
                     });
                     mFinishButton = (Button) findViewById(R.id.finish_button);
                     mFinishButton.setVisibility(View.VISIBLE);
                     mFinishButton.setText("Cancel");
-                    mFinishButton.setOnClickListener(new OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            finish();
-                        }
-                    });
+                    mFinishButton.setOnClickListener(finishClickHandler);
 
 
                 } else if (result.contains("Unable to Complete Registration")) {
@@ -443,6 +481,17 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
 
     }
 
+
+    private OnClickListener finishClickHandler = new OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Intent intent;
+            intent = new Intent(getApplicationContext(), MainActivity.class);
+            startActivity(intent);
+            finish();
+        }
+    };
+
     private boolean isNetworkConnected() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         return (cm.getActiveNetworkInfo() != null);
@@ -457,6 +506,11 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
         mAuthTask.execute((Void) null);
     }
 
+    private boolean Registered(){
+        SharedPreferences preferenceSettings;
+        preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+        return preferenceSettings.getBoolean("registered", false);
+    }
 
 }
 

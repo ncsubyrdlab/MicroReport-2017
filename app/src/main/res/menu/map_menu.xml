@@ -28,4 +28,10 @@
         android:orderInCategory="400"
         android:showAsAction="never"
         tools:ignore="AppCompatResource" />
+    <item android:id="@+id/action_clear_cache"
+        android:title="@string/action_clear"
+        android:contentDescription="@string/action_clear"
+        android:orderInCategory="500"
+        android:showAsAction="never"
+        tools:ignore="AppCompatResource" />
 </menu>

@@ -79,7 +79,8 @@
         <activity
             android:name=".LoginActivity"
             android:label="@string/title_activity_login"
-            android:windowSoftInputMode="adjustResize|stateVisible" >
+            android:parentActivityName=".MainActivity"
+            android:windowSoftInputMode="adjustResize|stateHidden" >
         </activity>
     </application>
 

@@ -1,6 +1,7 @@
 package edu.ucsc.psyc_files.microreport;
 
 import android.app.Application;
+import android.content.SharedPreferences;
 
 import com.google.android.gms.analytics.GoogleAnalytics;
 import com.google.android.gms.analytics.Tracker;
@@ -17,7 +18,7 @@ import java.util.HashMap;
  * to send a report to the file. Can save reports if no internet connection, but this does not
  * happen consistently.
  * Crash reports include Installation ID, stacktrace, and device info
- * Also setup for Google Analytics
+ * Also setup for Google Analytics and registration flag
  */
 @ReportsCrashes(
         formKey = "",
@@ -45,6 +46,7 @@ public class CrashReporting extends Application {
     public void onCreate() {
         super.onCreate();
         ACRA.init(this);
+        setSharedPreferences();;
     }
 
     synchronized Tracker getTracker(TrackerName trackerId) {
@@ -62,6 +64,18 @@ public class CrashReporting extends Application {
 
         }
         return mTrackers.get(trackerId);
+    }
+
+    private void setSharedPreferences() {
+        //save registration status to sharedpreferences so registration screen will show first
+        SharedPreferences preferenceSettings;
+        SharedPreferences.Editor preferenceEditor;
+
+        preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+        preferenceEditor = preferenceSettings.edit();
+        preferenceEditor.putBoolean("registered", false);
+        preferenceEditor.apply();
+
     }
 
 }

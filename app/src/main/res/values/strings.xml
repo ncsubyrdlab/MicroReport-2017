@@ -7,7 +7,7 @@
     <string name="action_gethelp">Get Help</string>
     <string name="action_feedback">Give Feedback</string>
     <string name="action_webpage">Study Website</string>
-    <string name="action_register">Register Device</string>
+    <string name="action_clear">Refresh Map</string>
 
     <!-- Main page -->
     <string name="app_name">MicroReport</string>

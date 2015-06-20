@@ -32,7 +32,7 @@ public class Installation {
                     if (!installation.exists())
                         writeInstallationFile(installation);
                     sID = readInstallationFile(installation);
-                   //setSharedPreferences();
+
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -58,13 +58,5 @@ public class Installation {
             out.close();
         }
 
-        private static void setSharedPreferences() {
-        //save installation ID and registration status to sharedpreferences
-        SharedPreferences preferenceSettings;
-        SharedPreferences.Editor preferenceEditor;
 
-        //preferenceSettings = getPreferences(PREFERENCE_MODE_PRIVATE);
-        //preferenceEditor = preferenceSettings.edit();
-        //preferenceEditor.putBoolean("registered", false);
-    }
 }

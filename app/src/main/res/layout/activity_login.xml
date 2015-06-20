@@ -21,18 +21,23 @@
             <TextView android:id="@+id/header" android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:text="@string/registerhead"
                 android:contentDescription="@string/registerhead"
-                style="@android:style/TextAppearance.Large" android:paddingTop="10dp"/>
-
-            <AutoCompleteTextView android:id="@+id/email" android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:hint="@string/prompt_email"
-                android:inputType="textEmailAddress" android:maxLines="1"
-                android:singleLine="true" android:contentDescription="@string/prompt_email" />
-
+                style="@android:style/TextAppearance.Large" android:paddingTop="10dp"
+                android:gravity="center_horizontal" android:autoLink="all"/>
+            <TextView android:id="@+id/subhead" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:text="@string/registersub"
+                android:contentDescription="@string/registersub"
+                style="@android:style/TextAppearance.Medium"
+                android:gravity="center_horizontal" android:autoLink="all"/>
             <EditText android:id="@+id/fname" android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:hint="@string/prompt_name"
                 android:imeActionId="@+id/login" android:imeActionLabel="@string/action_sign_in_short"
                 android:imeOptions="actionUnspecified" android:inputType="textNoSuggestions"
                 android:maxLines="1" android:singleLine="true" />
+
+            <AutoCompleteTextView android:id="@+id/email" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:hint="@string/prompt_email"
+                android:inputType="textEmailAddress" android:maxLines="1"
+                android:singleLine="true" android:contentDescription="@string/prompt_email" />
 
             <Button android:id="@+id/email_sign_in_button" style="?android:textAppearanceSmall"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -41,7 +46,7 @@
 
             <TextView android:id="@+id/result" android:layout_width="match_parent"
                 android:layout_height="wrap_content" style="@android:style/TextAppearance.Medium"
-                android:paddingTop="10dp"/>
+                android:paddingTop="10dp" android:gravity="center_horizontal"/>
 
             <Button android:id="@+id/finish_button" style="?android:textAppearanceSmall"
                 android:layout_width="match_parent" android:layout_height="wrap_content"

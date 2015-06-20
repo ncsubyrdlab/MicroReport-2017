@@ -3,10 +3,10 @@ package edu.ucsc.psyc_files.microreport;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.BadParcelableException;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -22,13 +22,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.ekito.simpleKML.Serializer;
-import com.ekito.simpleKML.model.Document;
-import com.ekito.simpleKML.model.Feature;
-import com.ekito.simpleKML.model.Geometry;
-import com.ekito.simpleKML.model.Kml;
-import com.ekito.simpleKML.model.Placemark;
-import com.ekito.simpleKML.model.Point;
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
 import com.google.android.gms.common.ConnectionResult;
@@ -36,6 +29,7 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -43,21 +37,23 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.ClusterItem;
 import com.google.maps.android.clustering.ClusterManager;
 import com.google.maps.android.clustering.view.DefaultClusterRenderer;
-
-import org.acra.ACRA;
+import edu.ucsc.psyc_files.microreport.TransformReports;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 /**
- * MicroReport 1.0
+ * MicroReport 2.0
  * @author Christy M. Byrd, University of California, Santa Cruz
- * Copyright 2014
+ * Copyright 2015
  * This Android app is used to report microaggressions and display them on a map. It displays a list of markers from a KML
  * file and allows user to post reports in the KML file. Utility pages display campus resources,
  * show a feedback form, and link to the study homepage
@@ -66,13 +62,14 @@ import java.util.ArrayList;
  * SimpleKML: https://github.com/Ekito/Simple-KML
  * and ACRA: https://github.com/ACRA/acra
  */
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements OnMapReadyCallback {
 
-    private static GoogleMap mMap;  //Google map fragment
+    private static MapFragment mMapFragment;  //Google map fragment
     private static ClusterManager<MyItem> mClusterManager;  //Handles rendering of markers at different zoom levels
     private ArrayAdapter<MyItem> adapter;   //handles the list of reports in landscape mode
     private ArrayList<MyItem> myItemCollection; //list of markers taken from the report
     private DefaultClusterRenderer<MyItem> clusterRenderer; //my implementation of Google utility library cluster renderer
+    private List<TransformReports.Report> reports;
 
     /**
      * Opens the main page and displays the reports on a map in clusters if necessary
@@ -81,40 +78,114 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(!Registered()){  //check if device is registered
+            startActivity(new Intent(this, LoginActivity.class)); //if not, launch registration screen
+            finish();
+        }else {
+            setContentView(R.layout.activity_main);
 
-        setContentView(R.layout.activity_main);
+            //NEW LOGIC
+            //get reports file
+            File reportsFile = new File(getCacheDir(), "reports.xml");
+            //if just an orientation change or no network connection, don't download new file
+            if (savedInstanceState != null || (!isNetworkConnected())) {
+                //use file as is
+                //todo: there's an error if there is no file loaded (cache has just been cleared)
+                //myItemCollection is saved on outstate, so not sure if loading from there or file here
+                //toastResult("orientation change or network not connected");
+            } else {
+                //check age of cached reports file, then download reports file
+                if (System.currentTimeMillis() - reportsFile.lastModified() > 900000) {
+                    new downloadReports().execute();
+                }
+                //otherwise use file as is
+            }
 
-            //check internet connection, don't try to load markers or anything if not connected
-            if (isNetworkConnected()) {
-
-                //retrieve map items if just changing screen orientation (or restoring from memory)
-
-                   if (savedInstanceState != null) {
-                       //savedInstanceState.setClassLoader(getClass().getClassLoader());
-                       myItemCollection = savedInstanceState.getParcelableArrayList("items");
-                   }
+            //move on to putting file into list of Report objects
+            try {
+                TransformReports transform = new TransformReports(reportsFile);
+                reports = transform.getReports();
 
                 //check to Google Play Services is installed
                 if (checkGooglePlay()) {
-
-                    //set up the map fragment: focus on center of campus, show user location, and use my infowindow format
-                    mMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map)).getMap();
-                    setUpMapIfNeeded();
-                    mMap.setMyLocationEnabled(true);
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(36.991386, -122.060872), 14));
-                    mMap.setInfoWindowAdapter(new MyInfoWindow());
-
-                    // Initialize the cluster manager and renderer and set up listeners
-                    mClusterManager = new ClusterManager<MyItem>(this, mMap);
-                    clusterRenderer = new MyClusterRenderer(this, mMap, mClusterManager);
-                    mClusterManager.setRenderer(clusterRenderer);
-                    mMap.setOnCameraChangeListener(mClusterManager);
-                    mMap.setOnMarkerClickListener(mClusterManager);
-
-                    //add markers for reports
-                    getMapMarkers();
+                    //set up the map fragment
+                    mMapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
+                    mMapFragment.getMapAsync(this);
                 }
-            } else Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
+
+                }
+            catch (FileNotFoundException ex) {
+                //not sure if this is the best solution
+                Intent intent = new Intent(this, MainActivity.class);
+                startActivity(intent);
+                finish();
+            }
+            catch (Exception ex) {
+                toastResult(ex.toString()+ " in onCreate");
+            }
+
+        }
+    }
+
+    @Override
+    public void onMapReady(GoogleMap mMap) {
+        //add stuff to map
+        mMap.setMyLocationEnabled(true);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(36.991386, -122.060872), 14));
+        mMap.setInfoWindowAdapter(new MyInfoWindow());
+
+        // Initialize the cluster manager and renderer and set up listeners
+        mClusterManager = new ClusterManager<MyItem>(this, mMap);
+        clusterRenderer = new MyClusterRenderer(this, mMap, mClusterManager);
+        mClusterManager.setRenderer(clusterRenderer);
+        mMap.setOnCameraChangeListener(mClusterManager);
+        mMap.setOnMarkerClickListener(mClusterManager);
+
+        //translate reports into myItemCollection
+        //todo: streamline this?
+        myItemCollection = new ArrayList<MyItem>();
+        for (TransformReports.Report report : reports) {
+            Double lat;
+            Double longi;
+
+            try {
+                lat = Double.parseDouble(report.latitude);
+                longi = Double.parseDouble(report.longitude);
+            } catch (NumberFormatException ex) {
+                lat = 0.0;
+                longi = 0.0;
+            }
+            String snippet = report.classOrEvent + "\n" + report.description;
+            myItemCollection.add(new MyItem(report.date, snippet, lat, longi));
+        }
+        //Add items from reports to ClusterManager and force a recluster (so the items show up)
+        mClusterManager.addItems(myItemCollection);
+        mClusterManager.cluster();
+
+        //fill listview with reports from array using custom adapter (only visible in landscape mode)
+        if (findViewById(R.id.reports) != null) {
+            ListView list = (ListView) findViewById(R.id.reports);
+            adapter = new ItemAdapter(this, myItemCollection);
+            list.setAdapter(adapter);
+            list.setOnItemClickListener(mItemClickedHandler);
+        }
+        /**
+        //add points from report list
+        for (TransformReports.Report report : reports){
+            Double lat;
+            Double longi;
+            try {
+                lat = Double.parseDouble(report.latitude);
+                longi = Double.parseDouble(report.longitude);
+            } catch (NumberFormatException ex) {
+                lat = 0.0;
+                longi = 0.0;
+            }
+            mMap.addMarker(new MarkerOptions()
+                    .title(report.description)
+                    .snippet(report.description)
+                    .position(new LatLng(lat ,longi)));
+        }**/
     }
 
     /**checks whether the device is connected to an internet network*/
@@ -123,13 +194,6 @@ public class MainActivity extends Activity {
         return (cm.getActiveNetworkInfo() != null);
     }
 
-    /**confirms that the map is set up*/
-    private void setUpMapIfNeeded() {
-        if (mMap == null) {
-            mMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map))
-                    .getMap();
-        }
-    }
 
     /**save markers to an arraylist so don't have to reserialize kml file on screen orientation changes*/
     @Override
@@ -141,13 +205,18 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        setUpMapIfNeeded();
+    }
+
+    private boolean Registered(){
+        SharedPreferences preferenceSettings;
+        preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+        return preferenceSettings.getBoolean("registered", false);
     }
 
     /**creates the menu*/
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main, menu);
+        getMenuInflater().inflate(R.menu.map_menu, menu);
         return true;
     }
 
@@ -173,99 +242,25 @@ public class MainActivity extends Activity {
                 intent = new Intent(Intent.ACTION_VIEW, webpage);
                 startActivity(intent);
                 return true;
-            case R.id.action_register:
-                intent = new Intent(this, LoginActivity.class);
+            case R.id.action_clear_cache:
+                Toast.makeText(this, "Updating map...", Toast.LENGTH_SHORT).show();
+                //todo: this creates a "file not found error" but changing orientation is OK
+                /**File cacheDir = getCacheDir();
+                File[] files = cacheDir.listFiles();
+                if (files != null) {
+                    for (File file : files)
+                        file.delete();
+                } **/
+                //reload activity
+                intent = new Intent(this, MainActivity.class);
                 startActivity(intent);
+                finish();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-    /**Performs various checks to see if the map needs to/can be updated and updates it if necessary
-     * by calling an AsyncTask (openConnection) that opens a connection to the reports file and downloads it into the cache
-     * getReportMarkers actually puts the markers into the ClusterManager and on the map. It is called
-     * at the end of this method or after openConnection
-     */
-    private void getMapMarkers() {
-        //create a new file in the cache
-        File reports = new File(getCacheDir(), "microreports.kml");
-
-        //check if new file needs to be loaded
-        boolean loadnew = false;
-        //check that reports exists and was modified within the last 15 mins(lastmodified = 0 if file does not exist)
-        if (System.currentTimeMillis() - reports.lastModified() > 900000) {
-            loadnew = true;
-        }
-
-        if (loadnew) {
-            //if new file is needed, open http connection and write the KML file to the cache via AsyncTask
-            new openConnection().execute(reports);
-        } else {
-            //otherwise use the existing file in the cache
-                getReportMarkers(reports);
-        }
-    }
-
-    /**
-     * Serizalizes the cached KML file using SimpleKML to pull out the markers for each report
-     * (title and description only). Saves the markers into an array (myItemCollection). All of the
-     * items in the array are then added into the ClusterManager. If the phone is in landscape mode,
-     * a list of reports appears on the right side, filled from the array.
-     * @param reports
-     */
-    private void getReportMarkers(File reports) {
-       //if just an orientation change, don't serialize KML file
-        if (myItemCollection == null) {
-            //Serialize KML file
-            Kml kml = null;
-            try {
-                //check if there is a cached file
-                if (reports.exists() && reports != null) {
-                    Serializer kmlSerializer;
-                    kmlSerializer = new Serializer();
-                    kml = kmlSerializer.read(reports);
-
-                    String title;
-                    String snippet;
-                    double lat;
-                    double lng;
-                    myItemCollection = new ArrayList<MyItem>();
-
-                    //add each marker to an array
-                    Document feature = (Document) kml.getFeature();
-                    for (Feature f : feature.getFeatureList()) {
-                        Placemark placemark = (Placemark) f;
-                        for (Geometry g : placemark.getGeometryList()) {    //not sure why I need a loop here
-                            Point p = (Point) g;
-                            title = placemark.getName();
-                            snippet = placemark.getDescription();
-                            lat = p.getCoordinates().getLatitude();
-                            lng = p.getCoordinates().getLongitude();
-
-                            myItemCollection.add(new MyItem(title, snippet, lat, lng));
-                        }
-                    }
-                }
-            }
-            catch (Exception ex) {
-                //required by SimpleKML
-                Toast.makeText(this, "Error "+ex, Toast.LENGTH_LONG).show();
-                return;
-            }
-        }
-                //Add items from array to ClusterManager and force a recluster (so the items show up)
-                mClusterManager.addItems(myItemCollection);
-                mClusterManager.cluster();
-
-            //fill listview with reports from array using custom adapter (only visible in landscape mode)
-            if (findViewById(R.id.reports) != null) {
-                ListView list = (ListView) findViewById(R.id.reports);
-                adapter = new ItemAdapter(this, myItemCollection);
-                list.setAdapter(adapter);
-                list.setOnItemClickListener(mItemClickedHandler);
-            }
-    }
 
     /**When the user clicks on a list item, the map zooms to the marker and opens the info window
      * https://github.com/ch8908/thor-android/blob/100ff882515be390c3e0ac7f705e1ec10c7d5d90/thor-android/src/main/java/com/osolve/thor/activity/MainActivity.java*/
@@ -275,7 +270,7 @@ public class MainActivity extends Activity {
         v.setSelected(true);
         MyItem item = myItemCollection.get(position);
         v.setContentDescription(item.getSnippet()+item.getTitle());
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(item.getPosition(), 18));
+        mMapFragment.getMap().animateCamera(CameraUpdateFactory.newLatLngZoom(item.getPosition(), 18));
             Marker marker = clusterRenderer.getMarker(item);
             if (marker != null) {
                 marker.showInfoWindow();
@@ -283,53 +278,61 @@ public class MainActivity extends Activity {
         }
     };
 
-    /**
-     * Downloads the reports KML file and copies it into the cache, then calls getReportMarkers
-     * Uses MRapp login from .htaccess file
-     */
-    private class openConnection extends AsyncTask<File, Void, File> {
+    private class downloadReports extends AsyncTask<Void, Void, String> {
+        //connects to PHP script that copies report file with just display data, then
+        // copies the processed reports file into the cache
         @Override
-        protected File doInBackground(File... params) {
-            if (isNetworkConnected()) {
-            //enables response caching on 4.0 and above
-            enableHttpResponseCache();
+        protected String doInBackground(Void... params) {
+            if (!isNetworkConnected()) {
+                //cancel if network is not connected
+                return "No network connection";
+            }
+                //enables response caching on 4.0 and above
+                enableHttpResponseCache();
 
-            try {
-                URL url = new URL("http://people.ucsc.edu/~cmbyrd/microreport/Reports.kml");
-                HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                String basicAuth = "Basic " + new String(Base64.encode("MRapp:sj8719i".getBytes(), Base64.DEFAULT));
-                con.setRequestProperty("Authorization", basicAuth);
-                File reports = params[0];
+                try {
+                    //todo: correct url
+                    URL url = new URL("http://people.ucsc.edu/~cmbyrd/testdb/process_reports.php");
+                    HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                    String basicAuth = "Basic " + new String(Base64.encode("MRapp:sj8719i".getBytes(), Base64.DEFAULT));
+                    con.setRequestProperty("Authorization", basicAuth);
+                    //reads into cache
+                    File reportsFile = new File(getCacheDir(), "reports.xml");
 
-                if (con.getResponseCode() == 200) {
-                    FileWriter out = new FileWriter(reports);
-                    BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-                    String line = in.readLine();
-                    do {
-                        out.write(line);
-                        line = in.readLine();
-                    } while (line != null);
-                    out.close();
-                    in.close();
-                    con.disconnect();
+                    if (con.getResponseCode() == 200) {
+                        FileWriter out = new FileWriter(reportsFile);
+                        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                        String line = in.readLine();
+                        do {
+                            out.write(line);
+                            line = in.readLine();
+                        } while (line != null);
+                        out.close();
+                        in.close();
+                        con.disconnect();
 
-                    return reports;
-                } else return null;
-            } catch (Exception ex) {
-                return null;
+                        return "Success";
+                    } else return con.getResponseMessage();
+                } catch (Exception ex) {
+                    return ex.toString();
+                }
+
+        }
+
+        @Override
+        protected void onPostExecute(String message) {
+            super.onPostExecute(message);
+            if (!message.contentEquals("Success")) { //don't report anything if successfully downloaded
+                toastResult(message + " in downloadReports");
             }
         }
-            return null;
-        }
 
-        @Override
-        protected void onPostExecute(File reports) {
-            super.onPostExecute(reports);
-            if (reports != null) {
-                    getReportMarkers(reports);
-            }
-        }
     }
+
+    private void toastResult(String result){
+        Toast.makeText(this, ""+ result, Toast.LENGTH_SHORT).show();
+    }
+
 
     /**creates my own cluster item type that includes the title and snippet (uses the clustering utility library)*/
     public static class MyItem implements ClusterItem, Parcelable {

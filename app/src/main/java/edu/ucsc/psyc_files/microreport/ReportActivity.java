@@ -3,6 +3,7 @@ package edu.ucsc.psyc_files.microreport;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
@@ -52,7 +53,7 @@ public class ReportActivity extends Activity implements
         OnConnectionFailedListener, LocationListener {
 
     private String draftreport;
-    private String formattedreport;
+
     public final static String EXTRA_DRAFT = "edu.ucsc.psyc_files.microreport.DRAFT";
     public final static String EXTRA_DATA = "edu.ucsc.psyc_files.microreport.DATA";
     private GoogleMap mMap;
@@ -391,14 +392,27 @@ public class ReportActivity extends Activity implements
         //Android ID (some devices have same one in 2.2 (9774d56d682e549c), not reliable prior to 2.2, changes with factory reset
         String androidId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
 
-        formattedreport = "\n<Placemark><name>"+d+"</name>" +
+        SharedPreferences preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+        String partid = preferenceSettings.getString("partID", "000000");
+
+       // String[] formattedreport = {Installation.id(this), androidId, String.valueOf(self), String.valueOf(now), othertime, classdescription,
+       //         String.valueOf(currentlocation), locationtext, selectedbuilding, String.valueOf(lat), String.valueOf(longi), partid};
+        String output = "installID="+Uri.encode(Installation.id(this))+"&deviceID="+Uri.encode(androidId)
+                +"&target="+Uri.encode(String.valueOf(self))+"&currentTime="+Uri.encode(String.valueOf(now))
+                +"&otherTime="+Uri.encode(othertime)+"&classOrEvent="+Uri.encode(classdescription)+
+                "&currentLocation="+Uri.encode(String.valueOf(currentlocation))+"&otherLocation="+Uri.encode(locationtext)
+                +"&building="+Uri.encode(selectedbuilding)+"&description="+Uri.encode(description)
+                +"&latitude="+Uri.encode(String.valueOf(lat))+"&longitude="+Uri.encode(String.valueOf(longi))
+                +"&partID="+Uri.encode(partid);
+        /**
+                "\n<Placemark><name>"+d+"</name>" +
                 "<ExtendedData xmlns:report=\"ucsc.edu\"><report:DeviceInfo>InstallationID: "+ Installation.id(this)+
                 " AndroidID: "+ androidId+"</report:DeviceInfo><report:Timestamp>"+d+"</report:Timestamp><report:Target-self>"+self+"</report:Target-self><report:Target-else>"+helse+
                 "</report:Target-else><report:CurrentTime>"+now+"</report:CurrentTime><report:OtherTime>"+othertime+
                 "</report:OtherTime><report:ClassOrEvent>"+classdescription+"</report:ClassOrEvent><report:CurrentLocation>"+currentlocation+
                 "</report:CurrentLocation><report:Building>"+selectedbuilding+"</report:Building><report:OtherLocation>"+locationtext+"</report:OtherLocation></ExtendedData>"+
                 "<description><![CDATA["+classdescription+" - "+description+"]]></description>" +
-                "<Point><coordinates>"+longi+","+lat+",0.0</coordinates></Point></Placemark>\n";
+                "<Point><coordinates>"+longi+","+lat+",0.0</coordinates></Point></Placemark>\n"; **/
 
        draftreport = "";
         if (self) {
@@ -427,7 +441,7 @@ public class ReportActivity extends Activity implements
         //open confirm report activity with draft report
         Intent intent = new Intent(this, ConfirmReport.class);
         intent.putExtra(EXTRA_DRAFT, draftreport);
-        intent.putExtra(EXTRA_DATA, formattedreport);
+        intent.putExtra(EXTRA_DATA, output);
         startActivity(intent);
     }
 
