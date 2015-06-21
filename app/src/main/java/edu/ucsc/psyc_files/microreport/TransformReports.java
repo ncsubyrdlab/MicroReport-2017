@@ -1,5 +1,7 @@
 package edu.ucsc.psyc_files.microreport;
 
+import android.app.Activity;
+import android.content.SharedPreferences;
 import android.util.Xml;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -19,8 +21,8 @@ import java.util.List;
  * also performs any sorting and searching
  * XmlPullParser code based on: http://developer.android.com/training/basics/network-ops/xml.html
  */
-public class TransformReports {
-    List reports;
+public class TransformReports {    //has to extend activity to use sharedpreferences?
+    List<TransformReports.Report> reports;
     File reportsFile;
     private static final String ns = null;
 
@@ -29,12 +31,12 @@ public class TransformReports {
         this.reportsFile = reportsFile;
     }
 
-    public List getReports()  throws XmlPullParserException, IOException {
+    public List<TransformReports.Report> getReports()  throws XmlPullParserException, IOException {
         reports = ReturnReportsList(reportsFile);
         return reports;
     }
 
-    public void setReports(List reports) {
+    public void setReports(List<TransformReports.Report> reports) {
         this.reports = reports;
     }
 
@@ -46,7 +48,7 @@ public class TransformReports {
         this.reportsFile = reportsFile;
     }
 
-     public List ReturnReportsList(File reportsFile)  throws XmlPullParserException, IOException {
+     public List<TransformReports.Report> ReturnReportsList(File reportsFile)  throws XmlPullParserException, IOException {
         XmlPullParser parser = Xml.newPullParser();
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
         //http://developer.android.com/reference/java/io/FileInputStream.html
@@ -56,18 +58,9 @@ public class TransformReports {
         return readFeed(parser);
     }
 
-    public List Sort() {
 
-        return reports;
-    }
-
-    public List Search() {
-
-        return reports;
-    }
-
-    private List readFeed(XmlPullParser parser) throws XmlPullParserException, IOException {
-        List reports = new ArrayList();
+    private List<TransformReports.Report> readFeed(XmlPullParser parser) throws XmlPullParserException, IOException {
+        List<TransformReports.Report> reports = new ArrayList<TransformReports.Report>();
 
         parser.require(XmlPullParser.START_TAG, ns, "reports");
         while (parser.next() != XmlPullParser.END_TAG) {
@@ -85,11 +78,8 @@ public class TransformReports {
         return reports;
     }
 
-
-
-
     public static class Report {
-        public final String date;
+        public final String date;   //this is uDate not date as of 6/20/15
         public final String classOrEvent;
         public final String description;
         public final String reportID;
@@ -131,7 +121,7 @@ public class TransformReports {
             }
             String name = parser.getName();
             switch (name) {
-                case ("date"):
+                case ("uDate"):
                     date = readString(parser, name);
                     break;
                 case ("classOrEvent"):

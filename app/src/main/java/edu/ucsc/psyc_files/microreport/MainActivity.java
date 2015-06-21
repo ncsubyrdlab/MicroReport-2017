@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Base64;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -18,9 +19,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Filter;
+import android.widget.Filterable;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
@@ -46,9 +51,14 @@ import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 /**
  * MicroReport 2.0
@@ -59,7 +69,6 @@ import java.util.List;
  * show a feedback form, and link to the study homepage
  * Requires Google Play Services and Android 3.0+
  * Uses Utility Library: https://github.com/googlemaps/android-maps-utils
- * SimpleKML: https://github.com/Ekito/Simple-KML
  * and ACRA: https://github.com/ACRA/acra
  */
 public class MainActivity extends Activity implements OnMapReadyCallback {
@@ -67,7 +76,8 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     private static MapFragment mMapFragment;  //Google map fragment
     private static ClusterManager<MyItem> mClusterManager;  //Handles rendering of markers at different zoom levels
     private ArrayAdapter<MyItem> adapter;   //handles the list of reports in landscape mode
-    private ArrayList<MyItem> myItemCollection; //list of markers taken from the report
+    private ArrayList<MyItem> myItemCollection; //list of markers taken from the report (through TransformReports)
+    private ArrayList<MyItem> filteredReports; //filtered reports for use in sorting and viewing own reports
     private DefaultClusterRenderer<MyItem> clusterRenderer; //my implementation of Google utility library cluster renderer
     private List<TransformReports.Report> reports;
 
@@ -78,17 +88,21 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(!Registered()){  //check if device is registered
-            startActivity(new Intent(this, LoginActivity.class)); //if not, launch registration screen
-            finish();
-        }else {
+        if (isNetworkConnected()) {//if network is not connected, skip registration page
+            if(!Registered()) {  //check if device is registered
+
+
+                startActivity(new Intent(this, LoginActivity.class)); //if not, launch registration screen
+                finish();
+            }
+
             setContentView(R.layout.activity_main);
 
             //NEW LOGIC
             //get reports file
             File reportsFile = new File(getCacheDir(), "reports.xml");
             //if just an orientation change or no network connection, don't download new file
-            if (savedInstanceState != null || (!isNetworkConnected())) {
+            if (savedInstanceState != null || !isNetworkConnected()) {
                 //use file as is
                 //todo: there's an error if there is no file loaded (cache has just been cleared)
                 //myItemCollection is saved on outstate, so not sure if loading from there or file here
@@ -122,8 +136,11 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             }
             catch (Exception ex) {
                 toastResult(ex.toString()+ " in onCreate");
+                ex.printStackTrace();
             }
 
+        } else {
+            toastResult("No internet connection");
         }
     }
 
@@ -142,9 +159,25 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         mMap.setOnMarkerClickListener(mClusterManager);
 
         //translate reports into myItemCollection
-        //todo: streamline this?
+        //todo: streamline this by making myItemCollection and TransformReports the same?
         myItemCollection = new ArrayList<MyItem>();
+        filteredReports = new ArrayList<MyItem>();
+
         for (TransformReports.Report report : reports) {
+            //change uDate to readable format
+            String displayDate;
+            try {
+                //http://stackoverflow.com/questions/17432735/convert-unix-time-stamp-to-date-in-java
+                long unixSeconds = Long.parseLong(report.date);
+                Date date = new Date(unixSeconds*1000L); // *1000 is to convert seconds to milliseconds
+                SimpleDateFormat sdf = new SimpleDateFormat("E, MMMM d hh:mm a"); // the format of your date
+                sdf.setTimeZone(TimeZone.getTimeZone("GMT-8")); // give a timezone reference for formmating (see comment at the bottom
+                displayDate = sdf.format(date);
+            }
+            catch (NumberFormatException ex) {
+                displayDate = "No Date";
+            }
+
             Double lat;
             Double longi;
 
@@ -155,9 +188,40 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                 lat = 0.0;
                 longi = 0.0;
             }
-            String snippet = report.classOrEvent + "\n" + report.description;
-            myItemCollection.add(new MyItem(report.date, snippet, lat, longi));
+
+            //flag for user's reports
+            boolean flag = false;
+            SharedPreferences preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+            String userPartID = preferenceSettings.getString("partID", "");
+             if (report.partID != null && report.partID.length() >0 ) {
+                if (report.partID.compareTo(userPartID)==0) {
+                    flag = true;
+                }
+             }
+
+            String snippet = report.classOrEvent + " - " + report.description;
+            //create new item with everything
+            MyItem item = new MyItem(displayDate, report.date, snippet, lat, longi, flag);
+            myItemCollection.add(item);
+            //add to filteredReports while at it
+            if (flag) {
+                filteredReports.add(item);
+            }
         }
+
+        /**
+        //copy own reports into filteredReports array
+        //sort of based on http://codetheory.in/android-filters/
+        //todo: place in own method for general searching?
+        //go ahead and set up filter as well
+        filteredReports = new ArrayList<MyItem>();
+        for (MyItem i : myItemCollection) {
+            if (i.getFlag()) {
+                filteredReports.add(i);
+            }
+        } **/
+
+
         //Add items from reports to ClusterManager and force a recluster (so the items show up)
         mClusterManager.addItems(myItemCollection);
         mClusterManager.cluster();
@@ -268,8 +332,16 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         @Override
         public void onItemClick(AdapterView parent, View v, int position, long id) {
         v.setSelected(true);
-        MyItem item = myItemCollection.get(position);
-        v.setContentDescription(item.getSnippet()+item.getTitle());
+        MyItem item;
+            //check whether to get position of item in filtered view or whole view
+            ToggleButton button = (ToggleButton) findViewById(R.id.my_reports);
+            if (button.isChecked()) {
+                item = filteredReports.get(position);
+            } else {
+                item = myItemCollection.get(position);
+            }
+
+        v.setContentDescription(item.getSnippet()+item.getDate());
         mMapFragment.getMap().animateCamera(CameraUpdateFactory.newLatLngZoom(item.getPosition(), 18));
             Marker marker = clusterRenderer.getMarker(item);
             if (marker != null) {
@@ -336,14 +408,18 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
 
     /**creates my own cluster item type that includes the title and snippet (uses the clustering utility library)*/
     public static class MyItem implements ClusterItem, Parcelable {
-        private final LatLng mPosition;
-        private final String title;
+        private final String displayDate;
+        private final String date;
         private final String snippet;
+        private final LatLng mPosition;
+        private final boolean flag;
 
-        public MyItem(String title, String snippet, double lat, double lng) {
+        public MyItem(String displayDate, String date, String snippet, double lat, double lng, boolean flag) {
             mPosition = new LatLng(lat, lng);
-            this.title = title;
+            this.date = date;
             this.snippet = snippet;
+            this.displayDate = displayDate;
+            this.flag = flag;
         }
 
         @Override
@@ -351,13 +427,19 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             return mPosition;
         }
 
-        public String getTitle() {
-            return title;
+        public String getDisplayDate() {
+            return displayDate;
+        }
+
+        public String getDate() {
+            return date;
         }
 
         public String getSnippet() {
             return snippet;
         }
+
+        public boolean getFlag() { return flag; }
 
         //needed for parcelable (to save in saveinstancestate)
         @Override
@@ -366,21 +448,26 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         }
 
         public void writeToParcel(Parcel out, int flags) {
-            out.writeString(title);
+            out.writeString(displayDate);
+            out.writeString(date);
             out.writeString(snippet);
             out.writeDouble(mPosition.latitude);
             out.writeDouble(mPosition.longitude);
+            out.writeString(String.valueOf(flag));
         }
 
         public static final Parcelable.Creator<MyItem> CREATOR = new Parcelable.Creator<MyItem>() {
             public MyItem createFromParcel(Parcel in) {
-                String title, snippet;
+                String displayDate, date, snippet;
                 Double latitude, longitude;
-                title = in.readString();
+                String flag;
+                displayDate = in.readString();
+                date = in.readString();
                 snippet = in.readString();
                 latitude = in.readDouble();
                 longitude = in.readDouble();
-                return new MyItem(title, snippet, latitude, longitude);
+                flag = in.readString();
+                return new MyItem(displayDate, date, snippet, latitude, longitude, Boolean.valueOf(flag));
             }
 
             public MyItem[] newArray(int size) {
@@ -401,7 +488,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         @Override
         protected void onBeforeClusterItemRendered(MyItem item, MarkerOptions markerOptions) {
             super.onBeforeClusterItemRendered(item, markerOptions);
-            markerOptions.title(item.getTitle());
+            markerOptions.title(item.getDisplayDate());
             markerOptions.snippet(item.getSnippet());
             markerOptions.icon(BitmapDescriptorFactory.defaultMarker(210));
         }
@@ -420,12 +507,17 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             markerDescription.setText(marker.getSnippet());
             v.setContentDescription(marker.getSnippet()+marker.getTitle());
 
-            //highlight item in listview (landscape only)
+            //highlight item in listview based on whether filtered (landscape only)
             if (findViewById(R.id.reports) != null) {
                 MyItem item = clusterRenderer.getClusterItem(marker);
                 ListView list = (ListView) findViewById(R.id.reports);
-                int position = myItemCollection.indexOf(item);
-                list.setSelection(position);
+                ToggleButton button = (ToggleButton) findViewById(R.id.my_reports);
+                if (button.isChecked()) {
+                    list.setSelection(filteredReports.indexOf(item));
+                } else {
+                    list.setSelection(myItemCollection.indexOf(item));
+                }
+
                }
             return v;
         }
@@ -464,8 +556,9 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         }
 
         public ItemAdapter(Context context, ArrayList<MyItem> list) {
-            super(context, 0 , list);
+            super(context, 0, list);
         }
+
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             MyItem item = getItem(position);
@@ -483,11 +576,12 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                 viewHolder = (ViewHolder) convertView.getTag();
             }
             //set text of views
-            viewHolder.markerTitle.setText(item.getTitle());
+            viewHolder.markerTitle.setText(item.getDisplayDate());
             viewHolder.markerDescription.setText(item.getSnippet());
             //return completed view
             return convertView;
         }
+
     }
 
     /**checks that Google Play Services are available
@@ -503,4 +597,104 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             return false;
         }
     }
+
+    //button presses
+    public void sortAscending(View view){
+        //check whether to sort all reports or filtered report
+        ToggleButton button = (ToggleButton) findViewById(R.id.my_reports);
+        //http://www.limbaniandroid.com/2013/01/sorting-arraylist-string-arraylist-and.html
+        if (button.isChecked()) {
+            Collections.sort(filteredReports, new Comparator<MyItem>() {
+                public int compare(MyItem report1, MyItem report2) {
+                    Long date1, date2;
+                    try {
+                        date1 = Long.parseLong(report1.getDate());
+                        date2 = Long.parseLong(report2.getDate());
+                    }
+                    catch (NumberFormatException ex) {
+                        date1 = (long) 0;
+                        date2 = (long) 0;
+                    }
+                    return (date1 < date2 ? -1: date1 > date2 ? 1:0);
+                }
+            });
+        } else {
+            Collections.sort(myItemCollection, new Comparator<MyItem>() {
+                public int compare(MyItem report1, MyItem report2) {
+                    Long date1, date2;
+                    try {
+                        date1 = Long.parseLong(report1.getDate());
+                        date2 = Long.parseLong(report2.getDate());
+                    }
+                    catch (NumberFormatException ex) {
+                        date1 = (long) 0;
+                        date2 = (long) 0;
+                    }
+                    return (date1 < date2 ? -1: date1 > date2 ? 1:0);
+                }
+            });
+        }
+        adapter.notifyDataSetChanged();
+    }
+
+    public void sortDescending(View view) {
+        //check whether to sort all reports or filtered report
+        ToggleButton button = (ToggleButton) findViewById(R.id.my_reports);
+        if (button.isChecked()) {
+            Collections.sort(filteredReports, new Comparator<MyItem>() {
+                public int compare(MyItem report1, MyItem report2) {
+                    Long date1, date2;
+                    try {
+                        date1 = Long.parseLong(report1.getDate());
+                        date2 = Long.parseLong(report2.getDate());
+                    }
+                    catch (NumberFormatException ex) {
+                        date1 = (long) 0;
+                        date2 = (long) 0;
+                    }
+                    return (date1 > date2 ? -1: date1 < date2 ? 1:0);
+                }
+            });
+        } else {
+            Collections.sort(myItemCollection, new Comparator<MyItem>() {
+                public int compare(MyItem report1, MyItem report2) {
+                    Long date1, date2;
+                    try {
+                        date1 = Long.parseLong(report1.getDate());
+                        date2 = Long.parseLong(report2.getDate());
+                    }
+                    catch (NumberFormatException ex) {
+                        date1 = (long) 0;
+                        date2 = (long) 0;
+                    }
+                    return (date1 > date2 ? -1: date1 < date2 ? 1:0);
+                }
+            });
+        }
+        adapter.notifyDataSetChanged();
+    }
+
+    public void viewMyReports (View view){
+        boolean on = ((ToggleButton) view).isChecked();
+        if (on) {
+            //set view to filtered reports
+            adapter = new ItemAdapter(this, filteredReports);
+            ListView list = (ListView) findViewById(R.id.reports);
+            list.setAdapter(adapter);
+            list.setOnItemClickListener(mItemClickedHandler);
+            adapter.notifyDataSetChanged();
+        } else {
+            //reset list view to original list
+            ListView list = (ListView) findViewById(R.id.reports);
+            adapter = new ItemAdapter(this, myItemCollection);
+            list.setAdapter(adapter);
+            list.setOnItemClickListener(mItemClickedHandler);
+            adapter.notifyDataSetChanged();
+        }
+    }
+
+
+
 }
+
+

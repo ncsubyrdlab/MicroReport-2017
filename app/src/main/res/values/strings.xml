@@ -13,6 +13,10 @@
     <string name="app_name">MicroReport</string>
     <string name="title_activity_help">Resources</string>
     <string name="title_activity_feedback">Give Feedback</string>
+    <string name="sort_A">Sort Ascending</string>
+    <string name="sort_D">Sort Descending</string>
+    <string name="my_reports">Reports</string>
+
 
     <!-- Submit Report page -->
     <string name="title_activity_report">Submit a Report</string>
