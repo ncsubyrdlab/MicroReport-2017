@@ -79,8 +79,7 @@ public class ConfirmReport extends Activity {
         protected String doInBackground(Void... params) {
             String result;
             try {
-                //todo: change website
-                URL url = new URL("http://people.ucsc.edu/~cmbyrd/testdb/postreport.php");
+                URL url = new URL("http://people.ucsc.edu/~cmbyrd/microreport/postreport.php");
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
                 con.setDoOutput(true);
                 con.setChunkedStreamingMode(0);

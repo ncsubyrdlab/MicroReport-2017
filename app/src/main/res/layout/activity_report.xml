@@ -145,6 +145,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             style="@android:style/TextAppearance.Medium"/>
+        <Button
+            android:id="@+id/pick_place"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pick a Place"
+            android:contentDescription="Pick a Place"
+            android:onClick="pickPlace"
+            />
         <Spinner
             android:id="@+id/location_spinner"
             android:entries="@array/buildingsarray"

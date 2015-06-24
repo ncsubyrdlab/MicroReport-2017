@@ -88,13 +88,12 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (isNetworkConnected()) {//if network is not connected, skip registration page
+        if (isNetworkConnected()) {//if network is not connected, don't do anything
+            /** //removing this because it asks for the registration page every time the device reconnects to the internet
             if(!Registered()) {  //check if device is registered
-
-
                 startActivity(new Intent(this, LoginActivity.class)); //if not, launch registration screen
                 finish();
-            }
+            }**/
 
             setContentView(R.layout.activity_main);
 
@@ -274,7 +273,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     private boolean Registered(){
         SharedPreferences preferenceSettings;
         preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
-        return preferenceSettings.getBoolean("registered", false);
+        return preferenceSettings.getBoolean("registered", true);
     }
 
     /**creates the menu*/
@@ -363,8 +362,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                 enableHttpResponseCache();
 
                 try {
-                    //todo: correct url
-                    URL url = new URL("http://people.ucsc.edu/~cmbyrd/testdb/process_reports.php");
+                    URL url = new URL("http://people.ucsc.edu/~cmbyrd/microreport/process_reports.php");
                     HttpURLConnection con = (HttpURLConnection) url.openConnection();
                     String basicAuth = "Basic " + new String(Base64.encode("MRapp:sj8719i".getBytes(), Base64.DEFAULT));
                     con.setRequestProperty("Authorization", basicAuth);
@@ -485,12 +483,18 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             super(context, map, clusterManager);
         }
 
+
+
         @Override
         protected void onBeforeClusterItemRendered(MyItem item, MarkerOptions markerOptions) {
             super.onBeforeClusterItemRendered(item, markerOptions);
             markerOptions.title(item.getDisplayDate());
             markerOptions.snippet(item.getSnippet());
-            markerOptions.icon(BitmapDescriptorFactory.defaultMarker(210));
+            if (item.getFlag()){
+                markerOptions.icon(BitmapDescriptorFactory.defaultMarker(200));
+            } else {
+                markerOptions.icon(BitmapDescriptorFactory.defaultMarker(220));
+            }
         }
     }
 

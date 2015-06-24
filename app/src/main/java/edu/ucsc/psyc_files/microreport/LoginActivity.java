@@ -358,8 +358,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
             //save participant ID and email to shared preferences
 
             try {
-                //todo: change the URL
-                URL url = new URL("http://people.ucsc.edu/~cmbyrd/testdb/register.php");
+                URL url = new URL("http://people.ucsc.edu/~cmbyrd/microreport/register.php");
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
                 con.setDoOutput(true);
                 con.setChunkedStreamingMode(0);

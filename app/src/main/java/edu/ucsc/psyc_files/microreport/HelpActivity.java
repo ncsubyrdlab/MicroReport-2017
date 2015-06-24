@@ -1,6 +1,7 @@
 package edu.ucsc.psyc_files.microreport;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -8,6 +9,7 @@ import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 
 import com.google.android.gms.analytics.HitBuilders;
@@ -31,7 +33,7 @@ public class HelpActivity extends Activity {
         Boolean reg = preferenceSettings.getBoolean("registered", false);
         String partid = preferenceSettings.getString("partID", "Device has not been registered");
         String email = preferenceSettings.getString("emailAddress","");
-        String settings_text = "MicroReport v. 2\nParticipant ID: "+ partid +
+        String settings_text = "MicroReport v. 2\nRegistered: "+reg+"\nParticipant ID: "+ partid +
         "\nParticipant Email: " + email +"\n";
         settings.setText(settings_text);
         settings.setContentDescription(settings_text);
@@ -68,5 +70,7 @@ public class HelpActivity extends Activity {
                 return super.onOptionsItemSelected(item);
         }
     }
+
+
 
 }

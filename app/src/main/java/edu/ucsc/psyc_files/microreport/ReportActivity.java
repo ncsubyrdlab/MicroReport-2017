@@ -36,6 +36,8 @@ import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+//import com.google.android.gms.location.places.Place;
+//import com.google.android.gms.location.places.ui.PlacePicker;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -125,6 +127,15 @@ public class ReportActivity extends Activity implements
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
+    }
+
+    //set up PlacePicker https://developers.google.com/places/android/start#api-key
+    public void pickPlace(View view) {
+        int PLACE_PICKER_REQUEST = 1;
+        //PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+
+        //Context context = getApplicationContext();
+        //startActivityForResult(builder.build(context), PLACE_PICKER_REQUEST);
     }
 
     private boolean isNetworkConnected() {
