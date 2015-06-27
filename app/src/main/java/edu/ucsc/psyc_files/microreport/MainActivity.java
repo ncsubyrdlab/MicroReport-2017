@@ -11,7 +11,6 @@ import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Base64;
-import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -19,9 +18,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Filter;
-import android.widget.Filterable;
-import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -42,16 +38,14 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.ClusterItem;
 import com.google.maps.android.clustering.ClusterManager;
 import com.google.maps.android.clustering.view.DefaultClusterRenderer;
-import edu.ucsc.psyc_files.microreport.TransformReports;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,7 +73,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     private ArrayList<MyItem> myItemCollection; //list of markers taken from the report (through TransformReports)
     private ArrayList<MyItem> filteredReports; //filtered reports for use in sorting and viewing own reports
     private DefaultClusterRenderer<MyItem> clusterRenderer; //my implementation of Google utility library cluster renderer
-    private List<TransformReports.Report> reports;
+    private List<TransformReports.Report> reports;  //reports file that is transformed into myItemCollection
 
     /**
      * Opens the main page and displays the reports on a map in clusters if necessary
@@ -89,62 +83,37 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (isNetworkConnected()) {//if network is not connected, don't do anything
-            /** //removing this because it asks for the registration page every time the device reconnects to the internet
-            if(!Registered()) {  //check if device is registered
-                startActivity(new Intent(this, LoginActivity.class)); //if not, launch registration screen
-                finish();
-            }**/
-
+            //todo: errors thrown when come back from submitting report
             setContentView(R.layout.activity_main);
-
-            //NEW LOGIC
-            //get reports file
-            File reportsFile = new File(getCacheDir(), "reports.xml");
             //if just an orientation change or no network connection, don't download new file
-            if (savedInstanceState != null || !isNetworkConnected()) {
-                //use file as is
-                //todo: there's an error if there is no file loaded (cache has just been cleared)
-                //myItemCollection is saved on outstate, so not sure if loading from there or file here
-                //toastResult("orientation change or network not connected");
-            } else {
-                //check age of cached reports file, then download reports file
+            if (savedInstanceState != null)  {
+                myItemCollection = savedInstanceState.getParcelableArrayList("items");
+                filteredReports = savedInstanceState.getParcelableArrayList("filtereditems");
+                toastResult("using savedInstanceState");
+                setUpMap();
+            }
+            else {
+                //check if device is registered, if not, the activity will automatically close
+                new checkRegistration().execute();
+                //check age of cached reports file and download reports file
+                File reportsFile = new File(getCacheDir(), "reports.xml");
                 if (System.currentTimeMillis() - reportsFile.lastModified() > 900000) {
+                    toastResult("downloading report");
                     new downloadReports().execute();
+                    //the async task will update the reports file in the cache and set up the map (calls onMapReady)
+                } else {
+                    toastResult("using cached file");
+                    setUpMap(); //this function just uses myItemCollection and skips the xml step
                 }
-                //otherwise use file as is
             }
-
-            //move on to putting file into list of Report objects
-            try {
-                TransformReports transform = new TransformReports(reportsFile);
-                reports = transform.getReports();
-
-                //check to Google Play Services is installed
-                if (checkGooglePlay()) {
-                    //set up the map fragment
-                    mMapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
-                    mMapFragment.getMapAsync(this);
-                }
-
-                }
-            catch (FileNotFoundException ex) {
-                //not sure if this is the best solution
-                Intent intent = new Intent(this, MainActivity.class);
-                startActivity(intent);
-                finish();
-            }
-            catch (Exception ex) {
-                toastResult(ex.toString()+ " in onCreate");
-                ex.printStackTrace();
-            }
-
-        } else {
+        } else {    //end if network is connected
             toastResult("No internet connection");
         }
     }
 
     @Override
     public void onMapReady(GoogleMap mMap) {
+        //this is called from the async task in setUpMap()
         //add stuff to map
         mMap.setMyLocationEnabled(true);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(36.991386, -122.060872), 14));
@@ -157,71 +126,13 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         mMap.setOnCameraChangeListener(mClusterManager);
         mMap.setOnMarkerClickListener(mClusterManager);
 
-        //translate reports into myItemCollection
-        //todo: streamline this by making myItemCollection and TransformReports the same?
-        myItemCollection = new ArrayList<MyItem>();
-        filteredReports = new ArrayList<MyItem>();
-
-        for (TransformReports.Report report : reports) {
-            //change uDate to readable format
-            String displayDate;
-            try {
-                //http://stackoverflow.com/questions/17432735/convert-unix-time-stamp-to-date-in-java
-                long unixSeconds = Long.parseLong(report.date);
-                Date date = new Date(unixSeconds*1000L); // *1000 is to convert seconds to milliseconds
-                SimpleDateFormat sdf = new SimpleDateFormat("E, MMMM d hh:mm a"); // the format of your date
-                sdf.setTimeZone(TimeZone.getTimeZone("GMT-8")); // give a timezone reference for formmating (see comment at the bottom
-                displayDate = sdf.format(date);
-            }
-            catch (NumberFormatException ex) {
-                displayDate = "No Date";
-            }
-
-            Double lat;
-            Double longi;
-
-            try {
-                lat = Double.parseDouble(report.latitude);
-                longi = Double.parseDouble(report.longitude);
-            } catch (NumberFormatException ex) {
-                lat = 0.0;
-                longi = 0.0;
-            }
-
-            //flag for user's reports
-            boolean flag = false;
-            SharedPreferences preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
-            String userPartID = preferenceSettings.getString("partID", "");
-             if (report.partID != null && report.partID.length() >0 ) {
-                if (report.partID.compareTo(userPartID)==0) {
-                    flag = true;
-                }
-             }
-
-            String snippet = report.classOrEvent + " - " + report.description;
-            //create new item with everything
-            MyItem item = new MyItem(displayDate, report.date, snippet, lat, longi, flag);
-            myItemCollection.add(item);
-            //add to filteredReports while at it
-            if (flag) {
-                filteredReports.add(item);
-            }
-        }
-
-        /**
-        //copy own reports into filteredReports array
-        //sort of based on http://codetheory.in/android-filters/
-        //todo: place in own method for general searching?
-        //go ahead and set up filter as well
-        filteredReports = new ArrayList<MyItem>();
-        for (MyItem i : myItemCollection) {
-            if (i.getFlag()) {
-                filteredReports.add(i);
-            }
-        } **/
-
-
+        //finally add and display items
         //Add items from reports to ClusterManager and force a recluster (so the items show up)
+        //final check if myItemCollection is null for some reason
+        if (myItemCollection == null) {
+            new downloadReports().execute();
+            return;
+        }
         mClusterManager.addItems(myItemCollection);
         mClusterManager.cluster();
 
@@ -232,24 +143,9 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             list.setAdapter(adapter);
             list.setOnItemClickListener(mItemClickedHandler);
         }
-        /**
-        //add points from report list
-        for (TransformReports.Report report : reports){
-            Double lat;
-            Double longi;
-            try {
-                lat = Double.parseDouble(report.latitude);
-                longi = Double.parseDouble(report.longitude);
-            } catch (NumberFormatException ex) {
-                lat = 0.0;
-                longi = 0.0;
-            }
-            mMap.addMarker(new MarkerOptions()
-                    .title(report.description)
-                    .snippet(report.description)
-                    .position(new LatLng(lat ,longi)));
-        }**/
+
     }
+
 
     /**checks whether the device is connected to an internet network*/
     private boolean isNetworkConnected() {
@@ -258,10 +154,11 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     }
 
 
-    /**save markers to an arraylist so don't have to reserialize kml file on screen orientation changes*/
+    /**save markers to an arraylist so don't have to re-download file on screen orientation changes*/
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putParcelableArrayList("items",myItemCollection);
+        outState.putParcelableArrayList("filtereditems",filteredReports);
         super.onSaveInstanceState(outState);
     }
 
@@ -270,11 +167,6 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         super.onResume();
     }
 
-    private boolean Registered(){
-        SharedPreferences preferenceSettings;
-        preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
-        return preferenceSettings.getBoolean("registered", true);
-    }
 
     /**creates the menu*/
     @Override
@@ -381,6 +273,8 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                         in.close();
                         con.disconnect();
 
+                        //todo: check registration here?
+
                         return "Success";
                     } else return con.getResponseMessage();
                 } catch (Exception ex) {
@@ -395,8 +289,83 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             if (!message.contentEquals("Success")) { //don't report anything if successfully downloaded
                 toastResult(message + " in downloadReports");
             }
+            else {
+                try {
+                    //put reports from xml file into reports variable
+                    File reportsFile = new File(getCacheDir(), "reports.xml");
+                    TransformReports transform = new TransformReports(reportsFile);
+                    reports = transform.getReports();
+                    //translate reports into myItemCollection
+                    //todo: streamline this by making myItemCollection and TransformReports the same?
+                    myItemCollection = new ArrayList<MyItem>();
+                    filteredReports = new ArrayList<MyItem>();
+
+                    for (TransformReports.Report report : reports) {
+                        //change uDate to readable format
+                        String displayDate;
+                        try {
+                            //http://stackoverflow.com/questions/17432735/convert-unix-time-stamp-to-date-in-java
+                            long unixSeconds = Long.parseLong(report.date);
+                            Date date = new Date(unixSeconds*1000L); // *1000 is to convert seconds to milliseconds
+                            SimpleDateFormat sdf = new SimpleDateFormat("E, MMMM d hh:mm a"); // the format of your date
+                            sdf.setTimeZone(TimeZone.getTimeZone("GMT-8")); // give a timezone reference for formmating (see comment at the bottom
+                            displayDate = sdf.format(date);
+                        }
+                        catch (NumberFormatException ex) {
+                            displayDate = "No Date";
+                        }
+
+                        Double lat;
+                        Double longi;
+
+                        try {
+                            lat = Double.parseDouble(report.latitude);
+                            longi = Double.parseDouble(report.longitude);
+                        } catch (NumberFormatException ex) {
+                            lat = 0.0;
+                            longi = 0.0;
+                        }
+
+                        //flag for user's reports
+                        boolean flag = false;
+                        SharedPreferences preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+                        String userPartID = preferenceSettings.getString("partID", "");
+                        if (report.partID != null && report.partID.length() >0 ) {
+                            if (report.partID.compareTo(userPartID)==0) {
+                                flag = true;
+                            }
+                        }
+
+                        String snippet = report.classOrEvent + " - " + report.description;
+                        //create new item with everything
+                        MyItem item = new MyItem(displayDate, report.date, snippet, lat, longi, flag);
+                        myItemCollection.add(item);
+                        //add to filteredReports while at it
+                        if (flag) {
+                            filteredReports.add(item);
+                        }
+                    }
+                    //if filteredReports is null at this point, add a dummy item
+                    if (filteredReports == null) {
+                        filteredReports.add(new MyItem("No Reports","","User has no reports",0.0,0.0,true));
+                    }
+                    setUpMap();
+                } catch (Exception ex) {
+                    toastResult(ex.toString() + " in TransformReports try");
+                    ex.printStackTrace();
+                }
+            }
         }
 
+    }
+
+    private void setUpMap(){
+        //check to Google Play Services is installed
+        if (checkGooglePlay()) {
+            //set up the map fragment
+            mMapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
+            mMapFragment.getMapAsync(this);
+        } else Toast.makeText(this, "Install Google Play Services", Toast.LENGTH_SHORT).show();
     }
 
     private void toastResult(String result){
@@ -629,12 +598,11 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                     try {
                         date1 = Long.parseLong(report1.getDate());
                         date2 = Long.parseLong(report2.getDate());
-                    }
-                    catch (NumberFormatException ex) {
+                    } catch (NumberFormatException ex) {
                         date1 = (long) 0;
                         date2 = (long) 0;
                     }
-                    return (date1 < date2 ? -1: date1 > date2 ? 1:0);
+                    return (date1 < date2 ? -1 : date1 > date2 ? 1 : 0);
                 }
             });
         }
@@ -651,12 +619,11 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                     try {
                         date1 = Long.parseLong(report1.getDate());
                         date2 = Long.parseLong(report2.getDate());
-                    }
-                    catch (NumberFormatException ex) {
+                    } catch (NumberFormatException ex) {
                         date1 = (long) 0;
                         date2 = (long) 0;
                     }
-                    return (date1 > date2 ? -1: date1 < date2 ? 1:0);
+                    return (date1 > date2 ? -1 : date1 < date2 ? 1 : 0);
                 }
             });
         } else {
@@ -666,12 +633,11 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                     try {
                         date1 = Long.parseLong(report1.getDate());
                         date2 = Long.parseLong(report2.getDate());
-                    }
-                    catch (NumberFormatException ex) {
+                    } catch (NumberFormatException ex) {
                         date1 = (long) 0;
                         date2 = (long) 0;
                     }
-                    return (date1 > date2 ? -1: date1 < date2 ? 1:0);
+                    return (date1 > date2 ? -1 : date1 < date2 ? 1 : 0);
                 }
             });
         }
@@ -682,11 +648,11 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         boolean on = ((ToggleButton) view).isChecked();
         if (on) {
             //set view to filtered reports
-            adapter = new ItemAdapter(this, filteredReports);
-            ListView list = (ListView) findViewById(R.id.reports);
-            list.setAdapter(adapter);
-            list.setOnItemClickListener(mItemClickedHandler);
-            adapter.notifyDataSetChanged();
+                adapter = new ItemAdapter(this, filteredReports);
+                ListView list = (ListView) findViewById(R.id.reports);
+                list.setAdapter(adapter);
+                list.setOnItemClickListener(mItemClickedHandler);
+                adapter.notifyDataSetChanged();
         } else {
             //reset list view to original list
             ListView list = (ListView) findViewById(R.id.reports);
@@ -697,7 +663,75 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         }
     }
 
+    private class checkRegistration extends AsyncTask<Void, Void, String> {
+        //checks device ID in user file
+        @Override
+        protected String doInBackground(Void... params) {
+            if (!isNetworkConnected()) {
+                //cancel if network is not connected
+                return "No network connection";
+            }
+            //enables response caching on 4.0 and above
+            enableHttpResponseCache();
 
+            try {
+                //todo also log access here?
+                URL url = new URL("http://people.ucsc.edu/~cmbyrd/microreport/check_registration.php");
+                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                con.setDoOutput(true);
+                con.setChunkedStreamingMode(0);
+                String basicAuth = "Basic " + new String(Base64.encode("MRapp:sj8719i".getBytes(), Base64.DEFAULT));
+                con.setRequestProperty("Authorization", basicAuth);
+
+                //get partID from SharedPreferences and compare to file
+                SharedPreferences preferenceSettings;
+                preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+                String partID = preferenceSettings.getString("partID", "Not Registered");
+                if (partID == "Not Registered") {
+                    return "false";
+                }
+                    //check if ID is in user file
+                    OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
+                    out.write("partID="+partID.trim()); //trim whitespace
+                    out.close();
+
+                    if (con.getResponseCode() == 200) {
+                    //the php file will echo "true" or "false"
+                        BufferedReader reader = null;
+                        StringBuilder stringBuilder;
+                        reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                        stringBuilder = new StringBuilder();
+                        String line = null;
+                        while ((line = reader.readLine()) != null) {
+                            stringBuilder.append(line + "\n");
+                        }
+                        String result = stringBuilder.toString();
+                        return result;
+                    } else {
+                        return con.getResponseMessage();
+                    }
+
+            } catch (Exception ex) {
+                return ex.toString();
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            if (result.contains("false")) {
+            //device is not registered
+                startLoginActivity();
+            }
+        }
+
+    }
+
+    private void startLoginActivity(){
+        Intent intent = new Intent(this, LoginActivity.class);
+        startActivity(intent);
+        finish();
+    }
 
 }
 

@@ -442,7 +442,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                     mNewButton = (Button) findViewById(R.id.new_device_button);
                     mNewButton.setVisibility(View.GONE);
 
-                } else if (result.contains("The email address is already registered")) {
+                } else if (result.contains("That email address is already registered")) {
                     //show button to register new device and finish button, hide register button
                     mRegisterButton = (Button) findViewById(R.id.email_sign_in_button);
                     mRegisterButton.setVisibility(View.GONE);
