@@ -8,6 +8,7 @@
     <string name="action_feedback">Give Feedback</string>
     <string name="action_webpage">Study Website</string>
     <string name="action_clear">Refresh Map</string>
+    <string name="action_bulletin">Good News</string>
 
     <!-- Main page -->
     <string name="app_name">MicroReport</string>
@@ -199,5 +200,9 @@ as soon as possible if you no longer want to participate.
     <!--Feedback Page-->
     <string name="feedback"><b>Report bugs or an error message, or give any other feedback</b></string>
     <string name="feedback_hint">Enter feedback here</string>
+
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
 
 </resources>

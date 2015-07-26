@@ -110,6 +110,10 @@ public class FeedbackActivity extends Activity {
                 intent = new Intent(Intent.ACTION_VIEW, webpage);
                 startActivity(intent);
                 return true;
+            case R.id.action_bulletin:
+                intent = new Intent(this, BulletinBoard.class);
+                startActivity(intent);
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }

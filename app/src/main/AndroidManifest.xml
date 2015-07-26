@@ -30,7 +30,7 @@
             android:value="@integer/google_play_services_version" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyDwFd_zyX8yj9SbCDquQs-1MhvJhES3PEQ"/>
+            android:value="AIzaSyDwFd_zyX8yj9SbCDquQs-1MhvJhES3PEQ" />
 
         <activity
             android:name=".MainActivity"
@@ -81,6 +81,14 @@
             android:label="@string/title_activity_login"
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="adjustResize|stateHidden" >
+        </activity>
+        <activity
+            android:name=".BulletinBoard"
+            android:label="@string/action_bulletin"
+            android:parentActivityName=".MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="edu.ucsc.psyc_files.microreport.MainActivity" />
         </activity>
     </application>
 

@@ -211,6 +211,10 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                 startActivity(intent);
                 finish();
                 return true;
+            case R.id.action_bulletin:
+                intent = new Intent(this, BulletinBoard.class);
+                startActivity(intent);
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
