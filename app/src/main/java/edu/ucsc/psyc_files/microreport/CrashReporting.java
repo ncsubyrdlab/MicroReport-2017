@@ -32,38 +32,21 @@ import java.util.HashMap;
         customReportContent = {ReportField.DEVICE_ID, ReportField.APP_VERSION_NAME, ReportField.ANDROID_VERSION, ReportField.PHONE_MODEL, ReportField.CUSTOM_DATA, ReportField.STACK_TRACE, ReportField.LOGCAT }
 )
 public class CrashReporting extends Application {
-    private static final String PROPERTY_ID = "UA-58131743-2";
+    public static GoogleAnalytics analytics;
+    public static Tracker tracker;
 
-   public enum TrackerName {
-        APP_TRACKER, // Tracker used only in this app.
-        GLOBAL_TRACKER, // Tracker used by all the apps from a company. eg: roll-up tracking.
-        ECOMMERCE_TRACKER, // Tracker used by all ecommerce transactions from a company.
-    }
-
-    HashMap<TrackerName, Tracker> mTrackers = new HashMap<TrackerName, Tracker>();
-
-    @Override
+       @Override
     public void onCreate() {
         super.onCreate();
         ACRA.init(this);
-        setSharedPreferences();;
-    }
+        setSharedPreferences();
+        analytics = GoogleAnalytics.getInstance(this);
+        analytics.setLocalDispatchPeriod(1800);
 
-    synchronized Tracker getTracker(TrackerName trackerId) {
-        if (!mTrackers.containsKey(trackerId)) {
-
-            GoogleAnalytics analytics = GoogleAnalytics.getInstance(this);
-            Tracker t = analytics.newTracker(R.xml.global_tracker);
-            if(trackerId==TrackerName.APP_TRACKER){
-                t= analytics.newTracker(PROPERTY_ID);
-            }
-            mTrackers.put(trackerId, t);
-            //could use this without enum? Tracker t = GoogleAnalytics.getInstance(context).newTracker("UA-XXXX-Y");
-            //set Installation ID as user ID
-            t.set("&uid", Installation.id(this));
-
-        }
-        return mTrackers.get(trackerId);
+        tracker = analytics.newTracker("UA-58131743-2");
+        tracker.enableExceptionReporting(true);
+        tracker.enableAutoActivityTracking(true);
+           tracker.set("&uid", Installation.id(this));
     }
 
     private void setSharedPreferences() {

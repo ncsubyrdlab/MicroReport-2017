@@ -5,8 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="?android:attr/activatedBackgroundIndicator">
-
+    android:background="@android:color/white">
     <TextView
         android:id="@+id/marker_description"
         android:layout_marginLeft="5dp"

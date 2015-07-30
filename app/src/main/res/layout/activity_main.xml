@@ -1,13 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:id="@+id/drawer_layout"
+    >
+<RelativeLayout
     android:id="@+id/home"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:paddingTop="?android:attr/actionBarSize">
+    style="@style/UCSCBlue">
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/map"
         android:name="com.google.android.gms.maps.MapFragment"
         android:layout_height="match_parent"
         android:layout_width="match_parent"/>
-</LinearLayout>
+    <!--floating action button from http://xmodulo.com/implement-floating-action-button-android-apps.html-->
+    <ImageButton
+        android:id="@+id/fab_image_button"
+        android:contentDescription="@string/action_report"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="16dp"
+        android:layout_marginRight="16dp"
+        android:background="@drawable/fab_shape"
+        android:src="@drawable/ic_add_white_48dp"
+        android:tint="@android:color/white"
+        android:onClick="newReport"/>
+</RelativeLayout>
+    <ListView
+        android:id="@+id/navigation_drawer"
+        android:layout_width="240dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:choiceMode="singleChoice"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="0dp"
+        android:background="@android:color/white"
+        android:paddingTop="?android:attr/actionBarSize"
+        ></ListView>
+</android.support.v4.widget.DrawerLayout>

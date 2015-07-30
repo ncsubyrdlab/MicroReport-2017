@@ -2,13 +2,23 @@
 <resources>
     <string name="crash_toast_text">An error occurred! Crash report sent.</string>
 
-    <!--Action bar-->
+    <!--Action bar and navigation-->
     <string name="action_report">Report a Microaggression</string>
     <string name="action_gethelp">Get Help</string>
     <string name="action_feedback">Give Feedback</string>
     <string name="action_webpage">Study Website</string>
     <string name="action_clear">Refresh Map</string>
     <string name="action_bulletin">Good News</string>
+    <string name="drawer_open">Navigation Open</string>
+    <string name="drawer_close">Navigation Closed</string>
+    <string name="navigation">Navigation</string>
+    <string-array name="menu">
+        <item>Home</item>
+        <item>Good News</item>
+        <item>Get Help</item>
+        <item>Give Feedback</item>
+        <item>Study Website (external)</item>
+    </string-array>
 
     <!-- Main page -->
     <string name="app_name">MicroReport</string>
@@ -31,124 +41,21 @@
     <string name="whatclass">What class or event:</string>
     <string name="whathappened">What happened:</string>
     <string name="describehint">Describe what happened (who was involved (no names), what did they do, how did you feel?)</string>
+    <string name="describehint2">Describe what happened</string>
     <string name="location">Location (select <i>Use current location</i>, select a building, or enter a location):</string>
     <string name="usecurrentlocation">Use current location</string>
-    <string name="otherlocation">Room number or enter other location</string>
+    <string name="otherlocation">Class name or other location</string>
     <string name="button_preview">Preview Report</string>
-
-    <!--lats and longs are listed in ReportActivity, so don't change order without changing that list-->
-    <string-array name="buildingsarray">
-        <item>Select building...</item>
-        <item>9/10 Multipurpose Room</item>
-        <item>Agroecology</item>
-        <item>Barn Theater</item>
-        <item>Baskin Visual Arts</item>
-        <item>Bay Tree Conference Center</item>
-        <item>Bridge Gallery</item>
-        <item>Cardiff House</item>
-        <item>Center for Adaptive Optics</item>
-        <item>Classroom Unit</item>
-        <item>College Eight Academic</item>
-        <item>College Eight Commons</item>
-        <item>College Eight/Oakes Dining Hall</item>
-        <item>Community Building</item>
-        <item>Cowell Academic Building</item>
-        <item>Cowell Classroom Building</item>
-        <item>Cowell Community Room</item>
-        <item>Cowell Dining Hall</item>
-        <item>Cowell Press</item>
-        <item>Crown Classroom Building</item>
-        <item>Crown Computing Lab</item>
-        <item>Crown Dining Hall</item>
-        <item>Crown Faculty Wing</item>
-        <item>Crown Provost House</item>
-        <item>Crown Senior Commons Room</item>
-        <item>Crown/Merrill Community Room</item>
-        <item>Crown/Merrill Recreation Room</item>
-        <item>Digital Arts Research Center</item>
-        <item>Earth and Marine Sciences</item>
-        <item>East Field</item>
-        <item>East Field House</item>
-        <item>East Field House Activities Room</item>
-        <item>East Field House Dance Studio</item>
-        <item>East Field House Gym</item>
-        <item>East Field House Martial Arts Room</item>
-        <item>East Field House Tennis Courts</item>
-        <item>East Racquetball Court</item>
-        <item>Engineering 2</item>
-        <item>Gamelan Studio</item>
-        <item>Hahn Art Facility</item>
-        <item>Hall Gallery</item>
-        <item>Health Center</item>
-        <item>Humanities 1</item>
-        <item>Humanities and Social Sciences Building</item>
-        <item>Humanities Lecture</item>
-        <item>Interdisciplinary Sciences Building</item>
-        <item>Jack Baskin Auditorium</item>
-        <item>Jack Baskin Engineering</item>
-        <item>Krege Classroom Building</item>
-        <item>Kresge Academic Building</item>
-        <item>Kresge Annex A</item>
-        <item>Kresge Annex B</item>
-        <item>Kresge Library</item>
-        <item>Kresge Lounge</item>
-        <item>Kresge Provost House</item>
-        <item>Kresge Recreation Center</item>
-        <item>Kresge Town Hall</item>
-        <item>KZSC</item>
-        <item>Long Marine Lab Discovery Center</item>
-        <item>Lower East Field</item>
-        <item>Lower Quarry</item>
-        <item>McHenry Library</item>
-        <item>Media Theater</item>
-        <item>Merrill Academic Building</item>
-        <item>Merrill Baobab Room</item>
-        <item>Merrill Cultural Center</item>
-        <item>Merrill Provost House</item>
-        <item>Ming Ong Computing Lab</item>
-        <item>Natural Sciences 2</item>
-        <item>Natural Sciences 2 Annex</item>
-        <item>Nine Community Room</item>
-        <item>Oakes Academic Building</item>
-        <item>Oakes Garden</item>
-        <item>Oakes Library</item>
-        <item>Oakes Provost House</item>
-        <item>Oakes Tutoring Center</item>
-        <item>Ocean Health Building</item>
-        <item>OPERS Conference Room</item>
-        <item>OPERS Multipurpose Room</item>
-        <item>OPERS Pool</item>
-        <item>Page Smith Library</item>
-        <item>Physical Sciences Building</item>
-        <item>Porter Academic Building</item>
-        <item>Porter Dining Hall</item>
-        <item>Porter Hitchcock Lounge (Porter Fireside Lounge)</item>
-        <item>Porter Provost House</item>
-        <item>Porter/Kresge Lounge</item>
-        <item>Sinsheimer Laboratories</item>
-        <item>Social Sciences 1</item>
-        <item>Social Sciences 2</item>
-        <item>Stevenson Academic Building</item>
-        <item>Stevenson Event Center (Dining Hall)</item>
-        <item>Stevenson Fireside Lounge</item>
-        <item>Stevenson Library</item>
-        <item>Stevenson Music Practice Room</item>
-        <item>Stevenson Provost House</item>
-        <item>Theater Arts 2nd Stage</item>
-        <item>Theater Arts 2nd Stage Annex</item>
-        <item>Theater Arts Costume Shop</item>
-        <item>Theater Arts Drama</item>
-        <item>Theater Arts Experimental Theater</item>
-        <item>Theater Arts Lecture</item>
-        <item>Theater Arts Mainstage</item>
-        <item>Theater Arts Offices</item>
-        <item>Theater Arts Studio</item>
-        <item>Thimann Laboratories</item>
-        <item>Thimann Lecture Hall</item>
-        <item>Wellness Center</item>
-        <item>West Field House</item>
-        <item>West Gym</item>
-    </string-array>
+    <string name="cancel">Cancel</string>
+    <string name="bother">How much did it bother you?</string>
+    <string name="not_at_all">Not at all</string>
+    <string name="very_much">Very much</string>
+    <string name="related_to">Was it related to your...?</string>
+    <string name="race">race</string>
+    <string name="culture">culture</string>
+    <string name="gender">gender</string>
+    <string name="sexual_orientation">sexual orientation</string>
+    <string name="something_else">something else</string>
 
     <!--Confirm report popup -->
     <string name="title_activity_confirm_report">Confirm Report</string>
@@ -202,7 +109,28 @@ as soon as possible if you no longer want to participate.
     <string name="feedback_hint">Enter feedback here</string>
 
 
-    <string name="hello_world">Hello world!</string>
+    <!--Registration Page-->
+    <string name="title_activity_login">Register Device</string>
+
+    <!-- Strings related to login -->
+    <string name="prompt_email">Email address</string>
+    <string name="prompt_name">First name</string>
+    <string name="action_sign_in">Register</string>
+    <string name="action_sign_in_short">Register</string>
+
+    <string name="registerhead"><b>Register Your Device</b></string>
+        <string name = "registersub">Enter your email address and name below.
+        \nBy registering, you agree to the conditions of the End User License Agreement \nhttp://people.ucsc.edu/~cmbyrd/MicroReport_EULA.html
+        </string>
+    <string name="error_invalid_email">This email address is invalid</string>
+    <string name="error_field_required">This field is required</string>
+    <string name="finish_button">Finish</string>
+    <string name="new_device_button">Register New Device</string>
     <string name="action_settings">Settings</string>
+
+<!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+
 
 </resources>

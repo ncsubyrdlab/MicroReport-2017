@@ -1,192 +1,163 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:id="@+id/report">
+    android:id="@+id/report"
+    android:background="@color/ucsc_blue_very_light"
+    android:paddingTop="0dp"
+    >
 <LinearLayout
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingTop="?android:attr/actionBarSize"
+    android:padding="16dp"
     tools:context="edu.ucsc.psyc_files.microreport.ReportActivity"
-    android:orientation="vertical">
-    <RelativeLayout
+    android:background="@color/ucsc_blue_very_light"
+    android:orientation="vertical"
+    >
+    <EditText android:id="@+id/description"
+        android:hint="@string/describehint2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="textMultiLine|textCapSentences|textAutoCorrect"
+        android:textSize="16sp"
+        android:layout_marginBottom="12dp"/>
+    <CheckBox
+        android:id="@+id/currentlocationcheckbox"
+        android:checked="false"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="useCurrentLocation"
+        android:text="@string/usecurrentlocation"
+        android:contentDescription="@string/usecurrentlocation"
+        android:textSize="16sp"
+        android:layout_marginBottom="12dp"/>
+    <Spinner
+        android:id="@+id/location_spinner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:layout_marginBottom="12dp"
+        />
+    <EditText android:id="@+id/locationtextbox"
+        android:hint="@string/otherlocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:layout_marginBottom="12dp"
+        />
+    <TextView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        <TextView
-            android:id="@+id/reporthead"
-            android:text="@string/reporthead"
-            android:contentDescription="@string/reporthead"
-            android:layout_alignParentTop="true"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="20dp"
-            style="@android:style/TextAppearance.Large"/>
-        <TextView
-            android:id="@+id/happenedhead"
-            android:text="@string/happenedto"
-            android:contentDescription="@string/happenedto"
-            android:layout_below="@id/reporthead"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"
-            style="@android:style/TextAppearance.Medium"/>
+        android:layout_height="wrap_content"
+        android:text="@string/related_to"
+        android:textSize="16sp"
+        android:layout_marginBottom="12dp"/>
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:paddingBottom="12dp">
         <CheckBox
-            android:id="@+id/radio_you"
-            android:text="@string/happenedtoyou"
-            android:contentDescription="@string/happenedtoyou"
-            android:layout_below="@id/reporthead"
-            android:layout_toRightOf="@id/happenedhead"
+            android:id="@+id/race_check"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"
-            style="@android:style/TextAppearance.Medium"/>
-        <CheckBox
-            android:id="@+id/radio_else"
-            android:text="@string/happenedtoelse"
-            android:contentDescription="@string/happenedtoelse"
-            android:layout_below="@id/reporthead"
-            android:layout_toRightOf="@id/radio_you"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"
-            style="@android:style/TextAppearance.Medium"/>
-        <TextView
-            android:id="@+id/whenhead"
-            android:text="@string/when"
-            android:contentDescription="@string/when"
-            android:layout_below="@id/radio_you"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"
-            style="@android:style/TextAppearance.Medium"/>
-        <CheckBox
-            android:id="@+id/nowcheckbox"
-            android:checked="true"
-            android:text="@string/justnow"
-            android:contentDescription="@string/justnow"
-            android:layout_below="@id/radio_you"
-            android:layout_toRightOf="@id/whenhead"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"
-            style="@android:style/TextAppearance.Medium"/>
-        <EditText
-            android:id="@+id/othertime"
-            android:hint="@string/othertime"
-            android:contentDescription="@string/othertime"
-            android:layout_below="@id/radio_you"
-            android:layout_toRightOf="@id/nowcheckbox"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"/>
-        <TextView
-            android:id="@+id/classhead"
-            android:text="@string/whatclass"
-            android:contentDescription="@string/whatclass"
-            android:layout_below="@id/othertime"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            style="@android:style/TextAppearance.Medium"/>
-        <EditText android:id="@+id/classdescription"
-            android:layout_below="@id/othertime"
-            android:layout_toRightOf="@id/classhead"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"/>
-        <TextView
-            android:id="@+id/descriptionhead"
-            android:text="@string/whathappened"
-            android:contentDescription="@string/whathappened"
-            android:layout_below="@id/classhead"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            style="@android:style/TextAppearance.Medium"/>
-        <EditText android:id="@+id/description"
-            android:hint="@string/describehint"
-            android:contentDescription="@string/describehint"
-            android:layout_below="@id/descriptionhead"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:inputType="textMultiLine|textCapSentences|textAutoCorrect"/>
-        <TextView
-            android:id="@+id/locationhead"
-            android:text="@string/location"
-            android:contentDescription="@string/location"
-            android:layout_below="@id/description"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            style="@android:style/TextAppearance.Medium"/>
-        <CheckBox
-            android:id="@+id/currentlocationcheckbox"
-            android:checked="false"
-            android:layout_below="@id/locationhead"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="useCurrentLocation"/>
-        <TextView
-            android:id="@+id/currentlocationtext"
-            android:text="@string/usecurrentlocation"
-            android:contentDescription="@string/usecurrentlocation"
-            android:layout_toRightOf="@id/currentlocationcheckbox"
-            android:layout_below="@id/locationhead"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            style="@android:style/TextAppearance.Medium"/>
-        <Button
-            android:id="@+id/pick_place"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Pick a Place"
-            android:contentDescription="Pick a Place"
-            android:onClick="pickPlace"
+            android:text="@string/race"
+            android:contentDescription="@string/race"
+            android:textSize="16sp"
             />
-        <Spinner
-            android:id="@+id/location_spinner"
-            android:entries="@array/buildingsarray"
-            android:layout_below="@id/currentlocationcheckbox"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"/>
-        <EditText android:id="@+id/locationtextbox"
-            android:hint="@string/otherlocation"
-            android:contentDescription="@string/otherlocation"
-            android:layout_below="@id/location_spinner"
+        <CheckBox
+            android:id="@+id/culture_check"
+            android:layout_toRightOf="@+id/race_check"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"/>
-    </RelativeLayout>
+            android:text="@string/culture"
+            android:contentDescription="@string/culture"
+            android:textSize="16sp"
+            />
+        <CheckBox
+            android:id="@+id/gender_check"
+            android:layout_toRightOf="@+id/culture_check"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/gender"
+            android:contentDescription="@string/gender"
+            android:textSize="16sp"
+            />
+        <CheckBox
+            android:id="@+id/sexual_orientation_check"
+            android:layout_below="@+id/race_check"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sexual_orientation"
+            android:contentDescription="@string/sexual_orientation"
+            android:textSize="16sp"
+            />
+        <CheckBox
+            android:id="@+id/else_check"
+            android:layout_below="@+id/sexual_orientation_check"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/something_else"
+            android:contentDescription="@string/something_else"
+            android:textSize="16sp"
+            />
+        </RelativeLayout>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/bother"
+        android:textSize="16sp"
+        android:layout_marginBottom="12dp"/>
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
-
-        <fragment xmlns:android="http://schemas.android.com/apk/res/android"
-            android:id="@+id/map"
-            android:name="com.google.android.gms.maps.MapFragment"
-            android:layout_height="300dp"
-            android:layout_width="match_parent"/>
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_horizontal"
+        android:paddingBottom="12dp"
+        >
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:text="@string/not_at_all"
+            android:textSize="12sp"/>
+        <SeekBar
+            android:id="@+id/bother_seek"
+            android:layout_width="0dp"
+            android:layout_weight="3"
+            android:layout_height="match_parent" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:text="@string/very_much"
+            android:textSize="12sp"/>
+        </LinearLayout>
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        >
         <Button
-            android:id="@+id/openpopup"
-            android:layout_width="wrap_content"
+            android:id="@+id/cancel"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="@string/button_preview"
-            android:contentDescription="@string/button_preview"
-            android:onClick="submitReport"
+            android:text="@string/cancel"
+            android:contentDescription="@string/cancel"
+            android:background="@color/ucsc_blue_very_light"
+            android:textColor="@color/ucsc_blue"
+            />
+        <Button
+            android:id="@+id/submit"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="@string/okbutton"
+            android:contentDescription="@string/okbutton"
+            android:background="@color/ucsc_blue_very_light"
+            android:textColor="@color/ucsc_blue"
             />
     </LinearLayout>
-</LinearLayout>
+    </LinearLayout>
 </ScrollView>
+

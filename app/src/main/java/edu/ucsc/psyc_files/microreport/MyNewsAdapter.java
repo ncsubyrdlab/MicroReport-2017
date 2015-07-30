@@ -9,8 +9,9 @@ import android.widget.TextView;
 /**
  * Created by Christy on 7/26/2015.
  */
-public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
+public class MyNewsAdapter extends RecyclerView.Adapter<MyNewsAdapter.ViewHolder> {
     private String[][] mDataset; //0 is header, 1 is description
+    private String mLink;   //needs to be an intent or activity?
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -19,21 +20,25 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         // each data item is just a string in this case
         public TextView mHeading;
         public TextView mDescription;
+        public TextView mTimestamp;
+
         public ViewHolder(View v) {
             super(v);
             mHeading = (TextView) v.findViewById(R.id.heading);
             mDescription = (TextView) v.findViewById(R.id.description);
+            mTimestamp = (TextView) v.findViewById(R.id.timestamp);
+
         }
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public MyAdapter(String[][] myDataset) {
+    public MyNewsAdapter(String[][] myDataset) {
         mDataset = myDataset;
     }
 
     // Create new views (invoked by the layout manager)
     @Override
-    public MyAdapter.ViewHolder onCreateViewHolder(ViewGroup viewGroup,
+    public MyNewsAdapter.ViewHolder onCreateViewHolder(ViewGroup viewGroup,
                                                    int i) {
         // create a new view
         View itemView = LayoutInflater.
@@ -50,6 +55,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         // - replace the contents of the view with that element
         holder.mHeading.setText(mDataset[position][0]);
         holder.mDescription.setText(mDataset[position][1]);
+        holder.mTimestamp.setText(mDataset[position][2]);
 
     }
 
@@ -57,5 +63,10 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     @Override
     public int getItemCount() {
         return mDataset.length;
+    }
+
+    public String getLink(int position) {
+        mLink = (mDataset[position][3]);
+        return mLink;
     }
 }

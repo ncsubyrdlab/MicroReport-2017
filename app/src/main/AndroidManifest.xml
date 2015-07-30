@@ -31,11 +31,15 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDwFd_zyX8yj9SbCDquQs-1MhvJhES3PEQ" />
+        <meta-data
+            android:name="com.google.android.gms.analytics.globalConfigResource"
+            android:resource="@xml/analytics_global_config" />
 
         <activity
             android:name=".MainActivity"
             android:icon="@drawable/ic_microreport"
-            android:label="@string/app_name" >
+            android:label="@string/app_name"
+            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -46,7 +50,9 @@
             android:name=".ReportActivity"
             android:label="@string/title_activity_report"
             android:parentActivityName=".MainActivity"
-            android:windowSoftInputMode="stateHidden" >
+            android:windowSoftInputMode="stateHidden"
+            android:theme="@android:style/Theme.Holo.Light.Dialog"
+            >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="edu.ucsc.psyc_files.microreport.MainActivity" />

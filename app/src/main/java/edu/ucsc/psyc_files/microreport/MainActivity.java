@@ -1,15 +1,22 @@
 package edu.ucsc.psyc_files.microreport;
 
 import android.app.Activity;
+import android.app.DialogFragment;
+import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -22,6 +29,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+import android.widget.Toolbar;
 
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
@@ -31,6 +39,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -74,6 +83,9 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     private ArrayList<MyItem> filteredReports; //filtered reports for use in sorting and viewing own reports
     private DefaultClusterRenderer<MyItem> clusterRenderer; //my implementation of Google utility library cluster renderer
     private List<TransformReports.Report> reports;  //reports file that is transformed into myItemCollection
+    private ListView nav;
+    private DrawerLayout mDrawerLayout;
+    private ActionBarDrawerToggle mDrawerToggle;
 
     /**
      * Opens the main page and displays the reports on a map in clusters if necessary
@@ -82,14 +94,17 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
         if (isNetworkConnected()) {//if network is not connected, don't do anything
             //todo: errors thrown when come back from submitting report
             setContentView(R.layout.activity_main);
+
             //if just an orientation change or no network connection, don't download new file
             if (savedInstanceState != null)  {
                 myItemCollection = savedInstanceState.getParcelableArrayList("items");
                 filteredReports = savedInstanceState.getParcelableArrayList("filtereditems");
-                toastResult("using savedInstanceState");
+                //toastResult("using savedInstanceState");
                 setUpMap();
             }
             else {
@@ -98,26 +113,90 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                 //check age of cached reports file and download reports file
                 File reportsFile = new File(getCacheDir(), "reports.xml");
                 if (System.currentTimeMillis() - reportsFile.lastModified() > 900000) {
-                    toastResult("downloading report");
+                    //toastResult("downloading report");
                     new downloadReports().execute();
                     //the async task will update the reports file in the cache and set up the map (calls onMapReady)
                 } else {
-                    toastResult("using cached file");
+                    //toastResult("using cached file");
                     setUpMap(); //this function just uses myItemCollection and skips the xml step
                 }
             }
         } else {    //end if network is connected
             toastResult("No internet connection");
         }
+
+        //todo: change actionbar and overflow options
+        //navigation drawer
+        String[] menuList = getResources().getStringArray(R.array.menu);
+        nav = (ListView) findViewById(R.id.navigation_drawer);
+        nav.setAdapter(new ArrayAdapter<String>(this, R.layout.drawer_list_item, menuList));
+        nav.setOnItemClickListener(new DrawerItemClickListener());
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
+                R.string.drawer_open, R.string.drawer_close) {
+
+            /** Called when a drawer has settled in a completely open state. */
+            public void onDrawerOpened(View drawerView) {
+                getActionBar().setTitle(R.string.navigation);
+            }
+
+            /** Called when a drawer has settled in a completely closed state. */
+            public void onDrawerClosed(View view) {
+                getActionBar().setTitle(R.string.app_name);
+            }
+        };
+        mDrawerToggle.setDrawerIndicatorEnabled(true);
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+        getActionBar().setDisplayHomeAsUpEnabled(true);
+        getActionBar().setHomeButtonEnabled(true);
     }
 
-    @Override
+    private class DrawerItemClickListener implements ListView.OnItemClickListener{
+        @Override
+        public void onItemClick(AdapterView parent, View view, int position, long id) {
+            selectItem(position);
+        }
+    }
+
+    private void selectItem(int position){
+        Intent intent;
+        switch (position) {
+            case 0:
+                intent = new Intent(this, MainActivity.class);
+                startActivity(intent);
+                break;
+            case 1:
+                intent = new Intent(this, BulletinBoard.class);
+                startActivity(intent);
+                break;
+            case 2:
+                intent = new Intent(this, HelpActivity.class);
+                startActivity(intent);
+                break;
+            case 3:
+                intent = new Intent(this, FeedbackActivity.class);
+                startActivity(intent);
+                break;
+            case 4:
+                Uri webpage = Uri.parse("http://people.ucsc.edu/~cmbyrd/microaggressionstudy.html");
+                intent = new Intent(Intent.ACTION_VIEW, webpage);
+                startActivity(intent);
+            default:
+                break;
+        }
+        nav.setItemChecked(position, true);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerLayout.closeDrawer(nav);
+    }
+
     public void onMapReady(GoogleMap mMap) {
         //this is called from the async task in setUpMap()
         //add stuff to map
-        mMap.setMyLocationEnabled(true);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(36.991386, -122.060872), 14));
-        mMap.setInfoWindowAdapter(new MyInfoWindow());
+        mMap.setMyLocationEnabled(true); //shows user location
+        UiSettings settings = mMap.getUiSettings();
+        settings.setMapToolbarEnabled(false);  //doesn't show toolbar that links to Google Maps app
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(36.991386, -122.060872), 14)); //moves camera to campus center
+        mMap.setInfoWindowAdapter(new MyInfoWindow());  //uses my version of info window
 
         // Initialize the cluster manager and renderer and set up listeners
         mClusterManager = new ClusterManager<MyItem>(this, mMap);
@@ -175,28 +254,29 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         return true;
     }
 
+    public void newReport(View view){
+        //ReportDialogFragment newFragment = new ReportDialogFragment();
+        //newFragment.show(getFragmentManager(), "New Report");
+
+        Intent intent = new Intent(this, ReportActivity.class);
+        startActivity(intent);
+    }
+
     /**launches the appropriate action when the user clicks the menu*/
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        // Pass the event to ActionBarDrawerToggle, if it returns
+        // true, then it has handled the app icon touch event
+        if (mDrawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
         Intent intent;
         switch (item.getItemId()) {
-            case R.id.action_report:
+            /** now a floating action button
+             * case R.id.action_report:
                 intent = new Intent(this, ReportActivity.class);
                 startActivity(intent);
-                return true;
-            case R.id.action_gethelp:
-                intent = new Intent(this, HelpActivity.class);
-                startActivity(intent);
-                return true;
-            case R.id.action_feedback:
-                intent = new Intent(this, FeedbackActivity.class);
-                startActivity(intent);
-                return true;
-            case R.id.action_webpage:
-                Uri webpage = Uri.parse("http://people.ucsc.edu/~cmbyrd/microaggressionstudy.html");
-                intent = new Intent(Intent.ACTION_VIEW, webpage);
-                startActivity(intent);
-                return true;
+                return true; */
             case R.id.action_clear_cache:
                 Toast.makeText(this, "Updating map...", Toast.LENGTH_SHORT).show();
                 //todo: this creates a "file not found error" but changing orientation is OK
@@ -210,10 +290,6 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                 intent = new Intent(this, MainActivity.class);
                 startActivity(intent);
                 finish();
-                return true;
-            case R.id.action_bulletin:
-                intent = new Intent(this, BulletinBoard.class);
-                startActivity(intent);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -464,6 +540,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             markerOptions.title(item.getDisplayDate());
             markerOptions.snippet(item.getSnippet());
             if (item.getFlag()){
+                //colors: https://developers.google.com/android/reference/com/google/android/gms/maps/model/BitmapDescriptorFactory
                 markerOptions.icon(BitmapDescriptorFactory.defaultMarker(200));
             } else {
                 markerOptions.icon(BitmapDescriptorFactory.defaultMarker(220));
@@ -587,12 +664,11 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                     try {
                         date1 = Long.parseLong(report1.getDate());
                         date2 = Long.parseLong(report2.getDate());
-                    }
-                    catch (NumberFormatException ex) {
+                    } catch (NumberFormatException ex) {
                         date1 = (long) 0;
                         date2 = (long) 0;
                     }
-                    return (date1 < date2 ? -1: date1 > date2 ? 1:0);
+                    return (date1 < date2 ? -1 : date1 > date2 ? 1 : 0);
                 }
             });
         } else {
@@ -736,6 +812,17 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         startActivity(intent);
         finish();
     }
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        mDrawerToggle.syncState();
+    }
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        mDrawerToggle.onConfigurationChanged(newConfig);
+    }
+
 
 }
 

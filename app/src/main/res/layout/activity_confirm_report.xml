@@ -2,13 +2,14 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/popup"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    style="@style/UCSCBlue">
 <RelativeLayout
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="edu.ucsc.psyc_files.microreport.ConfirmReport"
-    android:paddingTop="?android:attr/actionBarSize">
+    >
 
     <TextView
         android:id="@+id/reportheader"

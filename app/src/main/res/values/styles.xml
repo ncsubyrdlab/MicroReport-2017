@@ -1,23 +1,38 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="android:Theme.Holo.Light">
+    <!--Material Theme from https://blog.xamarin.com/android-tips-hello-toolbar-goodbye-action-bar/-->
+     <style name="AppTheme" parent="android:Theme.Holo.Light">
+        <!--item name="android:colorPrimary">@color/ucsc_blue</item>
+        <item name="android:colorAccent">@color/ucsc_gold</item>
+         <item name="android:backgroundTint">@color/ucsc_blue</item-->
         <!--old theme: Theme.AppCompat.Light.DarkActionBa-->
+        <!--icon for the top of the menu bar-->
         <item name="android:icon">@drawable/ic_microreport</item>
         <!--makes the action bar hideable-->
         <item name="android:windowActionBarOverlay">true</item>
         <!--style action bar-->
         <item name="android:actionBarStyle">@style/MyActionBar</item>
-        <!--background of selected list item-->
-        <item name="android:activatedBackgroundIndicator">@drawable/listitem_background</item>
+        <!--background of menu and selected list item-->
+        <item name="android:popupMenuStyle">@style/MyPopupMenu</item>
+        <item name="android:activatedBackgroundIndicator">@style/MySelectedItem</item>
         <!--white overflow buttons and back menu-->
         <item name="android:actionOverflowButtonStyle">@style/MyOverFlowButton</item>
         <item name="android:homeAsUpIndicator">@drawable/ic_ab_back_holo_dark_am</item>
+
     </style>
     <!-- ActionBar styles (black action bar) -->
     <style name="MyActionBar" parent="@android:style/Widget.Holo.ActionBar">
-        <item name="android:background">#191919</item>
+        <!--item name="android:background">#191919</item-->
+        <item name="android:background">@color/ucsc_blue</item>
         <item name="android:titleTextStyle">@style/MyActionBarTitleText</item>
+    </style>
+    <!-- background color for Action Bar overflow menu -->
+    <style name="MyPopupMenu" parent="android:Widget.Holo.ListPopupWindow">
+        <item name="android:popupBackground">@android:color/white</item>
+    </style>
+    <style name="MySelectedItem" parent="android:Widget.Holo.ListPopupWindow">
+        <item name="android:popupBackground">@color/ucsc_gold_light</item>
     </style>
     <style name="MyOverFlowButton" parent="android:style/Widget.Holo.ActionBar">
         <item name="android:src">@drawable/ic_action_overflow_white</item>
@@ -25,5 +40,10 @@
    <!-- ActionBar title text (white) -->
     <style name="MyActionBarTitleText" parent="android:style/TextAppearance.Holo.Widget.ActionBar.Title">
         <item name="android:textColor">#ffffff</item>
+    </style>
+    <!--UCSC blue color scheme -->
+    <style name="UCSCBlue" >
+        <item name = "android:background">@color/ucsc_blue_very_light</item>
+        <item name = "android:paddingTop">?android:attr/actionBarSize</item>
     </style>
 </resources>
