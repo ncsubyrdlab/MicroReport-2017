@@ -4,16 +4,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Base64;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.google.android.gms.analytics.HitBuilders;
-import com.google.android.gms.analytics.Tracker;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -24,6 +20,7 @@ import java.net.URL;
 
 /**
  * Shows a draft of the report; user can submit the report or go back. This activity has no menu options.
+ * //no longer used with reportactivity as dialog
  */
 public class ConfirmReport extends Activity {
 

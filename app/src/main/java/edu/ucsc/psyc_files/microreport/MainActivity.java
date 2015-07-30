@@ -1,12 +1,9 @@
 package edu.ucsc.psyc_files.microreport;
 
 import android.app.Activity;
-import android.app.DialogFragment;
-import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.net.ConnectivityManager;
 import android.net.Uri;
@@ -14,7 +11,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.util.Base64;
@@ -29,10 +25,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
-import android.widget.Toolbar;
 
-import com.google.android.gms.analytics.HitBuilders;
-import com.google.android.gms.analytics.Tracker;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -255,11 +248,9 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     }
 
     public void newReport(View view){
-        //ReportDialogFragment newFragment = new ReportDialogFragment();
-        //newFragment.show(getFragmentManager(), "New Report");
-
         Intent intent = new Intent(this, ReportActivity.class);
         startActivity(intent);
+        updateMap();
     }
 
     /**launches the appropriate action when the user clicks the menu*/
@@ -278,18 +269,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                 startActivity(intent);
                 return true; */
             case R.id.action_clear_cache:
-                Toast.makeText(this, "Updating map...", Toast.LENGTH_SHORT).show();
-                //todo: this creates a "file not found error" but changing orientation is OK
-                /**File cacheDir = getCacheDir();
-                File[] files = cacheDir.listFiles();
-                if (files != null) {
-                    for (File file : files)
-                        file.delete();
-                } **/
-                //reload activity
-                intent = new Intent(this, MainActivity.class);
-                startActivity(intent);
-                finish();
+                updateMap();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -452,7 +432,21 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         Toast.makeText(this, ""+ result, Toast.LENGTH_SHORT).show();
     }
 
-
+    public void updateMap() {
+    //todo: update map here
+        Toast.makeText(this, "Updating map...", Toast.LENGTH_SHORT).show();
+        //todo: this creates a "file not found error" but changing orientation is OK
+        /**File cacheDir = getCacheDir();
+         File[] files = cacheDir.listFiles();
+         if (files != null) {
+         for (File file : files)
+         file.delete();
+         } **/
+        //reload activity
+        Intent intent = new Intent(this, MainActivity.class);
+        startActivity(intent);
+        finish();
+    }
     /**creates my own cluster item type that includes the title and snippet (uses the clustering utility library)*/
     public static class MyItem implements ClusterItem, Parcelable {
         private final String displayDate;
