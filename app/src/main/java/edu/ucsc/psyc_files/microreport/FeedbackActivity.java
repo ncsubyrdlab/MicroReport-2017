@@ -8,12 +8,8 @@ import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.provider.Settings;
-import android.support.v4.app.NavUtils;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.util.Base64;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -22,14 +18,11 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.google.android.gms.analytics.HitBuilders;
-import com.google.android.gms.analytics.Tracker;
-
-import org.acra.ReportField;
-
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Calendar;
 
 /**
  * Feedback form that posts to AFS space
@@ -82,8 +75,8 @@ public class FeedbackActivity extends Activity {
         startActivity(intent);
         //open connection and post feedback
         EditText text = (EditText) findViewById(R.id.feedbacktext);
-        String androidId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
-        String feedback = "\nTimestamp:"+ Calendar.getInstance().getTime()+"\tInstallationID:"+Installation.id(this)+"\tDeviceID:"+androidId+"\tComments:"+text.getText().toString();
+        //String androidId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+        String feedback = "feedback="+Uri.encode(text.getText().toString())+"&installationID="+Uri.encode(Installation.id(this));
         new postFeedback().execute(feedback);
         } else Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
     }
@@ -92,13 +85,28 @@ public class FeedbackActivity extends Activity {
         @Override
         protected String doInBackground(String... params) {
             try {
-                String urlstring = "http://people.ucsc.edu/~cmbyrd/microreport/postfeedback.php?output=";
-                URL url = new URL(urlstring + Uri.encode(params[0]));
+                String result;
+                URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/postfeedback.php");
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                String basicAuth = "Basic " + new String(Base64.encode("MRapp:sj8719i".getBytes(), Base64.DEFAULT));
-                con.setRequestProperty("Authorization", basicAuth);
-                con.connect();
-                String result = con.getResponseMessage();
+                con.setDoOutput(true);
+                con.setChunkedStreamingMode(0);
+                OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
+                out.write(params[0]);
+                out.close();
+
+                if (con.getResponseCode() == 200) {
+                    BufferedReader reader = null;
+                    StringBuilder stringBuilder;
+                    reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                    stringBuilder = new StringBuilder();
+                    String line = null;
+                    while ((line = reader.readLine()) != null) {
+                        stringBuilder.append("\n"+line);
+                    }
+                    result = stringBuilder.toString();
+                } else {
+                    result = con.getResponseMessage();
+                }
                 con.disconnect();
                 return result;
             } catch (Exception ex) {
@@ -109,13 +117,10 @@ public class FeedbackActivity extends Activity {
         @Override
         protected void onPostExecute (String result){
             super.onPostExecute(result);
-            toastResult(result);
+            Toast.makeText(getBaseContext(), "Submitting feedback: " + result.trim(), Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void toastResult(String result){
-        Toast.makeText(this, "Submitting feedback: " + result, Toast.LENGTH_SHORT).show();
-    }
 
     private class DrawerItemClickListener implements ListView.OnItemClickListener{
         @Override

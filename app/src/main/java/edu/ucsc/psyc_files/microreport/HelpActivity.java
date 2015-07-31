@@ -1,25 +1,19 @@
 package edu.ucsc.psyc_files.microreport;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.NavUtils;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-
-import com.google.android.gms.analytics.HitBuilders;
-import com.google.android.gms.analytics.Tracker;
 
 /**Shows campus resources and a short FAQ on the app*/
 public class HelpActivity extends Activity {
@@ -42,7 +36,7 @@ public class HelpActivity extends Activity {
         preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
         String partid = preferenceSettings.getString("partID", "Device has not been registered");
         String email = preferenceSettings.getString("emailAddress","");
-        String settings_text = "MicroReport v. 2\nParticipant ID: "+ partid +
+        String settings_text = "Participant ID: "+ partid +
         "\nParticipant Email: " + email +"\n";
         settings.setText(settings_text);
         settings.setContentDescription(settings_text);

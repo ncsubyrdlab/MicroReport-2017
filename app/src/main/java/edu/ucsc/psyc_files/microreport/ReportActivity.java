@@ -2,6 +2,7 @@ package edu.ucsc.psyc_files.microreport;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationManager;
@@ -454,7 +455,8 @@ public class ReportActivity extends Activity implements
                         "&installationID=" + Uri.encode(Installation.id(getBaseContext())) + "&androidID=" + Uri.encode(androidId) +
                         "&partID=" + Uri.encode(partID);
                 new postReport().execute(output);
-
+                Intent intent = new Intent(getBaseContext(), MainActivity.class);
+                startActivity(intent);
                 finish();
             }
         });
@@ -504,7 +506,7 @@ public class ReportActivity extends Activity implements
                     stringBuilder = new StringBuilder();
                     String line = null;
                     while ((line = reader.readLine()) != null) {
-                        stringBuilder.append(line + "\n");
+                        stringBuilder.append("\n"+line);
                     }
                     result = stringBuilder.toString();
                 } else {
@@ -519,14 +521,9 @@ public class ReportActivity extends Activity implements
         @Override
         protected void onPostExecute (String result){
             super.onPostExecute(result);
-            toastResult(result);
+            Toast.makeText(getBaseContext(), ""+ result.trim(), Toast.LENGTH_SHORT).show();
         }
     }
-
-    private void toastResult(String result){
-        Toast.makeText(this, ""+ result, Toast.LENGTH_SHORT).show();
-    }
-
 
     //set up location client
     protected synchronized void buildGoogleApiClient() {

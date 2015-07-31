@@ -17,13 +17,12 @@ import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build.VERSION;
 import android.os.Build;
+import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.provider.Settings;
 import android.text.TextUtils;
-import android.util.Base64;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -40,14 +39,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.net.ssl.HostnameVerifier;
-import 	javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 
 
 /**
@@ -204,7 +197,6 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
     }
 
     private boolean isEmailValid(String email) {
-        //TODO: Replace this with your own logic
         return email.contains("@");
     }
 
@@ -358,16 +350,16 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
             //save participant ID and email to shared preferences
 
             try {
-                URL url = new URL("http://people.ucsc.edu/~cmbyrd/microreport/register.php");
+                URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/register.php");
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
                 con.setDoOutput(true);
                 con.setChunkedStreamingMode(0);
-                String basicAuth = "Basic " + new String(Base64.encode("MRapp:sj8719i".getBytes(), Base64.DEFAULT));
-                con.setRequestProperty("Authorization", basicAuth);
+                //String basicAuth = "Basic " + new String(Base64.encode("MRapp:sj8719i".getBytes(), Base64.DEFAULT));
+                //con.setRequestProperty("Authorization", basicAuth);
 
                 //attempt to register user
                 OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
-                out.write("email=" + Uri.encode(mEmail) + "&fname=" + Uri.encode(mFname) + "&installID=" + Uri.encode(mInstallid) + "&deviceID=" + Uri.encode(mAndroidid)+ "&newDevice=" + mNewDevice);
+                out.write("email=" + Uri.encode(mEmail) + "&firstName=" + Uri.encode(mFname) + "&installationID=" + Uri.encode(mInstallid) + "&deviceID=" + Uri.encode(mAndroidid)+ "&newDevice=" + mNewDevice);
                 out.close();
 
                 if (con.getResponseCode() == 200) {
@@ -377,7 +369,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                     stringBuilder = new StringBuilder();
                     String line = null;
                     while ((line = reader.readLine()) != null) {
-                        stringBuilder.append(line + "\n");
+                        stringBuilder.append("\n"+line);
                     }
                     result = stringBuilder.toString();
 
@@ -390,7 +382,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                 }
 
             } catch (Exception ex) {
-                result = "Exception: " + ex;
+                result = "Error: " + ex;
                 return true;
             }
 
@@ -408,7 +400,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                 //todo: make keyboard go away after submitting
                 //check result
 
-                if (result.contains("Registration Complete")) {
+                if (result.contains("Registration Successful")) {
                     //hide register button (and new button if applicable) and show finish button
                     mRegisterButton = (Button) findViewById(R.id.email_sign_in_button);
                     mRegisterButton.setVisibility(View.GONE);
@@ -419,8 +411,8 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                     mNewButton = (Button) findViewById(R.id.new_device_button);
                     mNewButton.setVisibility(View.GONE);
                     //save participantID and email in sharedpreferences
-                    String partID = result.substring((result.length() - 7), result.length()-1);
-                    //mFinishButton.setText(partID);
+                    int i = result.lastIndexOf("ID: ");
+                    String partID = result.substring(i+4, result.length()-1);
                     preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
                     preferenceEditor = preferenceSettings.edit();
                     preferenceEditor.putBoolean("registered", true);
@@ -428,7 +420,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                     preferenceEditor.putString("emailAddress", mEmail);
                     preferenceEditor.apply();
 
-                } else if (result.contains("The device is already registered")) {
+                } else if (result.contains("This device is already registered")) {
                     //set shared preferences and show finish button
                     preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
                     preferenceEditor = preferenceSettings.edit();
@@ -497,8 +489,6 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
     }
 
     private void registerNewDevice(String email) {
-        // Show a progress spinner, and kick off a background task to
-        // perform the user registration attempt.
         showProgress(true);
         String androidId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
         mAuthTask = new UserLoginTask(email, null, Installation.id(this), androidId, true);

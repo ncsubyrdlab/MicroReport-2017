@@ -4,31 +4,43 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
+
 //https://developer.android.com/training/material/lists-cards.html#Dependencies
 //todo: get list from server (xml file), add cards to reports page, add floating action button
 public class BulletinBoard extends Activity {
     private RecyclerView mRecyclerView;
     private RecyclerView.Adapter mAdapter;
-    private RecyclerView.LayoutManager mLayoutManager;
-    private String[][] myDataset = {{"Post Your News","Click this link to send us some good news! You can post events and resources on and off-campus as well as affirmations and encouragement.", "7/27/15 4:26pm"},
-            {"Heading 1","Description 1", "Timestamp"},
-    {"Heading 2","Description 2","Timestamp"},
-    {"Heading 3","Description 3","Timestamp"}};
+    private ArrayList<NewsItem> news;
     private ListView nav;
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
+    private static final String ns = null;
 
 
     @Override
@@ -36,14 +48,14 @@ public class BulletinBoard extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bulletin_board);
 
+        //load recyclerview layout
         mRecyclerView = (RecyclerView) findViewById(R.id.cardList);
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // use a linear layout manager
-        mLayoutManager = new LinearLayoutManager(this);
-        mRecyclerView.setLayoutManager(mLayoutManager);
-
-        // specify an adapter (see also next example)
-        mAdapter = new MyNewsAdapter(myDataset);
+        //get news items
+        new getNews().execute();
+        news = new ArrayList<NewsItem>();
+        mAdapter = new MyNewsAdapter(news);
         mRecyclerView.setAdapter(mAdapter);
 
         //navigation drawer
@@ -55,12 +67,12 @@ public class BulletinBoard extends Activity {
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
                 R.string.drawer_open, R.string.drawer_close) {
 
-            /** Called when a drawer has settled in a completely open state. */
+            // Called when a drawer has settled in a completely open state.
             public void onDrawerOpened(View drawerView) {
                 getActionBar().setTitle(R.string.navigation);
             }
 
-            /** Called when a drawer has settled in a completely closed state. */
+            // Called when a drawer has settled in a completely closed state.
             public void onDrawerClosed(View view) {
                 getActionBar().setTitle(R.string.app_name);
             }
@@ -69,14 +81,121 @@ public class BulletinBoard extends Activity {
         mDrawerLayout.setDrawerListener(mDrawerToggle);
         getActionBar().setDisplayHomeAsUpEnabled(true);
         getActionBar().setHomeButtonEnabled(true);
-
     }
 
-    public void onClick(View view) {
+    private class getNews extends AsyncTask<Void, Void, ArrayList<NewsItem>> {
+        //connects to PHP script that copies report file with just display data, then
+        // copies the processed reports file into the cache
+        @Override
+        protected ArrayList<NewsItem> doInBackground(Void... params) {
+            try {
+                //URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/news.xml");
+                URL url = new URL("https://groups.google.com/a/ucsc.edu/forum/feed/microreport-goodnews-group/msgs/rss.xml?num=50");
+                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+
+                if (con.getResponseCode() == 200) {
+                    String currentTag = null;
+                    String title = null;
+                    String text = null;
+                    String link = null;
+                    Date timestamp = null;
+
+                    InputStream in = new BufferedInputStream(con.getInputStream());
+                    XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+                    XmlPullParser parser  = factory.newPullParser();
+                    //https://androidcookbook.com/Recipe.seam?recipeId=2217
+                    parser.setInput(in, "UTF-8");
+                    int eventType = parser.getEventType();
+
+                    while (eventType != XmlPullParser.END_DOCUMENT) {
+                        if (eventType == XmlPullParser.START_TAG) {
+                            currentTag = parser.getName();
+                        } else if (eventType == XmlPullParser.TEXT && !parser.isWhitespace()) {
+                            if ("title".equals(currentTag)) {
+                                title = parser.getText();
+                            }
+                            if ("description".equals(currentTag)) {
+                                text = parser.getText();
+                            }
+                            if ("link".equals(currentTag)) {
+                                link = parser.getText();
+                            }
+                            if ("pubDate".equals(currentTag)) {
+                                SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss", Locale.US);
+                                //EEE, dd MMM yyyy hh:mm:ss a
+                                try {
+                                    timestamp = sdf.parse(parser.getText());
+                                }
+                                catch (ParseException ex) {
+                                    timestamp = new Date();
+                                }
+                            }
+                        } else if (eventType == XmlPullParser.END_TAG) {
+                            if ("item".equals(parser.getName())) {
+                                news.add(new NewsItem(title, text, link, timestamp));
+                            }
+                        }
+                        eventType = parser.next();
+                    }
+
+                } else {
+                    news.add(new NewsItem("Connection Error",con.getResponseMessage(),"link",new Date()));
+                }
+            } catch (XmlPullParserException ex) {
+                news.add(new NewsItem("XmlPullParserException"+String.valueOf(ex.getLineNumber()),ex.toString(),"link",new Date()));
+            }catch (IOException ex) {
+                news.add(new NewsItem("IOException",ex.toString(),"link",new Date()));
+            }
+
+            return news;
+        }
+
+        @Override
+        protected void onPostExecute(ArrayList<NewsItem> news) {
+            super.onPostExecute(news);
+            //reset adapter
+            mAdapter.notifyDataSetChanged();
+        }
+    }
+
+    public void onCardClick(View view) {
         //go to link connected with card
         //Intent intent = new Intent(this, ReportActivity.class);
         //startActivity(intent);
+        //use? http://sapandiwakar.in/recycler-view-item-click-handler/
+        //http://stackoverflow.com/questions/24885223/why-doesnt-recyclerview-have-onitemclicklistener-and-how-recyclerview-is-dif
     }
+
+    public static class NewsItem {
+        public final String title;
+        public final String text;
+        public final String link;
+        public final Date timestamp;
+
+        public NewsItem(String title, String text, String link, Date timestamp) {
+            this.title = title;
+            this.text = text;
+            this.link = link;
+            this.timestamp = timestamp;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public String getText() {
+            return text;
+        }
+
+        public String getLink() {
+            return link;
+        }
+
+        public Date getTimestamp() {
+            return timestamp;
+        }
+    }
+
 
 
     private class DrawerItemClickListener implements ListView.OnItemClickListener{

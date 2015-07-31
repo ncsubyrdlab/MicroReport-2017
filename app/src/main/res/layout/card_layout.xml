@@ -28,6 +28,8 @@
             android:background="@color/ucsc_blue_light"
             android:textColor="@android:color/white"
             android:padding="4dp"
+            android:autoLink="all"
+            android:textColorLink="@color/ucsc_gold_light"
             />
         <TextView
             android:id="@+id/timestamp"

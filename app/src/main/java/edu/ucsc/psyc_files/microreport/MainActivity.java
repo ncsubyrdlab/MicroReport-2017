@@ -250,7 +250,6 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     public void newReport(View view){
         Intent intent = new Intent(this, ReportActivity.class);
         startActivity(intent);
-        updateMap();
     }
 
     /**launches the appropriate action when the user clicks the menu*/
@@ -750,12 +749,10 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
 
             try {
                 //todo also log access here?
-                URL url = new URL("http://people.ucsc.edu/~cmbyrd/microreport/check_registration.php");
+                URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/check_registration.php");
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
                 con.setDoOutput(true);
                 con.setChunkedStreamingMode(0);
-                String basicAuth = "Basic " + new String(Base64.encode("MRapp:sj8719i".getBytes(), Base64.DEFAULT));
-                con.setRequestProperty("Authorization", basicAuth);
 
                 //get partID from SharedPreferences and compare to file
                 SharedPreferences preferenceSettings;
