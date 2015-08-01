@@ -32,7 +32,6 @@ import java.util.Date;
 import java.util.Locale;
 
 //https://developer.android.com/training/material/lists-cards.html#Dependencies
-//todo: get list from server (xml file), add cards to reports page, add floating action button
 public class BulletinBoard extends Activity {
     private RecyclerView mRecyclerView;
     private RecyclerView.Adapter mAdapter;
@@ -84,8 +83,6 @@ public class BulletinBoard extends Activity {
     }
 
     private class getNews extends AsyncTask<Void, Void, ArrayList<NewsItem>> {
-        //connects to PHP script that copies report file with just display data, then
-        // copies the processed reports file into the cache
         @Override
         protected ArrayList<NewsItem> doInBackground(Void... params) {
             try {

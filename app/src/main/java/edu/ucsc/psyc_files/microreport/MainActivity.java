@@ -45,7 +45,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -88,11 +87,18 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
         if (isNetworkConnected()) {//if network is not connected, don't do anything
-            //todo: errors thrown when come back from submitting report
+            //check registration status
+            SharedPreferences preferenceSettings;
+            preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+            String partID = preferenceSettings.getString("partID", "false");
+            if (partID == "false") {
+                //go to registration page
+                Intent intent = new Intent(this, LoginActivity.class);
+                startActivity(intent);
+                finish();
+            }
             setContentView(R.layout.activity_main);
-
             //if just an orientation change or no network connection, don't download new file
             if (savedInstanceState != null)  {
                 myItemCollection = savedInstanceState.getParcelableArrayList("items");
@@ -101,8 +107,6 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                 setUpMap();
             }
             else {
-                //check if device is registered, if not, the activity will automatically close
-                new checkRegistration().execute();
                 //check age of cached reports file and download reports file
                 File reportsFile = new File(getCacheDir(), "reports.xml");
                 if (System.currentTimeMillis() - reportsFile.lastModified() > 900000) {
@@ -142,6 +146,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         mDrawerLayout.setDrawerListener(mDrawerToggle);
         getActionBar().setDisplayHomeAsUpEnabled(true);
         getActionBar().setHomeButtonEnabled(true);
+
     }
 
     private class DrawerItemClickListener implements ListView.OnItemClickListener{
@@ -736,73 +741,6 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         }
     }
 
-    private class checkRegistration extends AsyncTask<Void, Void, String> {
-        //checks device ID in user file
-        @Override
-        protected String doInBackground(Void... params) {
-            if (!isNetworkConnected()) {
-                //cancel if network is not connected
-                return "No network connection";
-            }
-            //enables response caching on 4.0 and above
-            enableHttpResponseCache();
-
-            try {
-                //todo also log access here?
-                URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/check_registration.php");
-                HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                con.setDoOutput(true);
-                con.setChunkedStreamingMode(0);
-
-                //get partID from SharedPreferences and compare to file
-                SharedPreferences preferenceSettings;
-                preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
-                String partID = preferenceSettings.getString("partID", "Not Registered");
-                if (partID == "Not Registered") {
-                    return "false";
-                }
-                    //check if ID is in user file
-                    OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
-                    out.write("partID="+partID.trim()); //trim whitespace
-                    out.close();
-
-                    if (con.getResponseCode() == 200) {
-                    //the php file will echo "true" or "false"
-                        BufferedReader reader = null;
-                        StringBuilder stringBuilder;
-                        reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
-                        stringBuilder = new StringBuilder();
-                        String line = null;
-                        while ((line = reader.readLine()) != null) {
-                            stringBuilder.append(line + "\n");
-                        }
-                        String result = stringBuilder.toString();
-                        return result;
-                    } else {
-                        return con.getResponseMessage();
-                    }
-
-            } catch (Exception ex) {
-                return ex.toString();
-            }
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-            if (result.contains("false")) {
-            //device is not registered
-                startLoginActivity();
-            }
-        }
-
-    }
-
-    private void startLoginActivity(){
-        Intent intent = new Intent(this, LoginActivity.class);
-        startActivity(intent);
-        finish();
-    }
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);

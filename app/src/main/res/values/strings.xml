@@ -127,10 +127,6 @@ as soon as possible if you no longer want to participate.
     <string name="finish_button">Finish</string>
     <string name="new_device_button">Register New Device</string>
     <string name="action_settings">Settings</string>
-
-<!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-
-
+    <string name="service_name">MicroReport Background Notification Service</string>
 
 </resources>

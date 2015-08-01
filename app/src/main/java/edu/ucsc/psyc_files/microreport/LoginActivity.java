@@ -72,6 +72,8 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        getActionBar().setDisplayHomeAsUpEnabled(false);
+        getActionBar().setHomeButtonEnabled(false);
 
         //don't allow orientation changes from portrait
         int currentOrientation = getResources().getConfiguration().orientation;
@@ -412,7 +414,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                     mNewButton.setVisibility(View.GONE);
                     //save participantID and email in sharedpreferences
                     int i = result.lastIndexOf("ID: ");
-                    String partID = result.substring(i+4, result.length()-1);
+                    String partID = result.substring(i+4, result.length());
                     preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
                     preferenceEditor = preferenceSettings.edit();
                     preferenceEditor.putBoolean("registered", true);
