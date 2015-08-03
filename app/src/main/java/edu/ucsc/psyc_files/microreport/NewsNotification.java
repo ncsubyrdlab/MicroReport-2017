@@ -40,7 +40,7 @@ public class NewsNotification {
 
         final Notification.Builder builder = new Notification.Builder(context)
                 .setDefaults(Notification.DEFAULT_ALL)
-                .setSmallIcon(R.drawable.ic_notification)
+                .setSmallIcon(R.drawable.ic_sunny)
                 .setContentTitle(title)
                 .setContentText(text)
                 .setPriority(Notification.PRIORITY_DEFAULT)

@@ -9,14 +9,35 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
-    android:paddingTop="?android:attr/actionBarSize"
+
     android:baselineAligned="false">
-    <fragment
+    <RelativeLayout
+        android:layout_width="0dp"
+        android:layout_weight=".5"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        style="@style/UCSCBlue">
+    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/map"
         android:name="com.google.android.gms.maps.MapFragment"
         android:layout_height="match_parent"
-        android:layout_width="0dp"
-        android:layout_weight=".50"/>
+        android:layout_width="match_parent"/>
+    <!--floating action button from http://xmodulo.com/implement-floating-action-button-android-apps.html-->
+    <ImageButton
+        android:id="@+id/fab_image_button"
+        android:contentDescription="@string/action_report"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="16dp"
+        android:layout_marginRight="16dp"
+        android:background="@drawable/fab_shape"
+        android:src="@drawable/ic_add_white_48dp"
+        android:tint="@android:color/white"
+        android:onClick="newReport"/>
+    </RelativeLayout>
     <LinearLayout
         android:layout_width="0dp"
         android:layout_weight=".50"

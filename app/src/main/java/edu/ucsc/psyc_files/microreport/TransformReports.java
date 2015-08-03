@@ -14,11 +14,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Takes the process_reports.xml and translates into Report objects to be displayed on the map
+ * Early version 2 code used to process_reports.xml and translates into Report objects to be displayed on the map
  * in {@MainActivity}. Needs to be replaced.
  * XmlPullParser code based on: http://developer.android.com/training/basics/network-ops/xml.html
  * but note that this is so much more complicated than the code from Android Cookbook (see {@BulletinBoard.java}
  */
+@Deprecated
 public class TransformReports {
     List<TransformReports.Report> reports;
     File reportsFile;
