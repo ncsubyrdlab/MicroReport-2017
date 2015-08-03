@@ -16,6 +16,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -35,15 +36,12 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-//import com.google.android.gms.location.places.Place;
-//import com.google.android.gms.location.places.ui.PlacePicker;
 
 /**
- * Presents a form for the user to submit a report. The user can select "Use current location" and
- * or select a building and the coordinates will be sent on.
- * When the user clicks "Preview", they are sent to the ConfirmReport activity to submit or go back.
- * The report is "formattedreport" and sent as one POST field to the reports file.
- * Uses Google Location Services to find the user's location and display on the map. The location client
+ * Presents a form for the user to submit a report. DIsplayed as a dialog. The user can select
+ * "Use current location" and have their location recorded or or select a building and the
+ * coordinates will be sent on. All of the fields are combined and sent to a php file on the server.
+ * Uses Google Location Services to find the user's location. The location client
  * is started when the activity starts and stops when the activity is no longer visible.
  */
 public class ReportActivity extends Activity implements
@@ -54,9 +52,6 @@ public class ReportActivity extends Activity implements
     public final static String EXTRA_DATA = "edu.ucsc.psyc_files.microreport.DATA";
     private GoogleApiClient mGoogleApiClient;
     private Location mCurrentLocation;
-    private static final int MILLISECONDS_PER_SECOND = 1000;
-    public static final int UPDATE_INTERVAL_IN_SECONDS = 30;
-    private static final int FASTEST_INTERVAL_IN_SECONDS = 1;
     private boolean locationEnabled;
     //coordinates for each building
     String[][] buildings = {{"Select a building", "9/10 Multipurpose Room",
@@ -168,7 +163,7 @@ public class ReportActivity extends Activity implements
             "Wellness Center",
             "West Field House",
             "West Gym"},
-            {"latitude","37.000689078482",
+            {"36.991386","37.000689078482",
                     "36.987514096338",
                     "36.977692429956",
                     "36.994601020807",
@@ -277,7 +272,7 @@ public class ReportActivity extends Activity implements
                     "36.99361",
                     "36.99156",
                     "36.99128"},
-            {"longitude","-122.0578801632",
+            {"-122.060872","-122.0578801632",
                     "-122.05866336822",
                     "-122.05431818962",
                     "-122.06105589866",
@@ -387,6 +382,10 @@ public class ReportActivity extends Activity implements
                     "-122.06415",
                     "-122.06411"}};
 
+    /**
+     * Sets up the form and button listeners, checks Google Play Services, and starts location updates.
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -481,10 +480,9 @@ public class ReportActivity extends Activity implements
         mLocationRequest.setInterval(10000);
         mLocationRequest.setFastestInterval(5000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
     }
     /**
-     * Tries to submit the report to the report file. Toast displays "OK" or an error.
+     * Tries to submit the report to the reports table. The php file echoes the result.
      */
     private class postReport extends AsyncTask<String, Void, String> {
         @Override
@@ -525,7 +523,7 @@ public class ReportActivity extends Activity implements
         }
     }
 
-    //set up location client
+    /**set up location client*/
     protected synchronized void buildGoogleApiClient() {
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
@@ -534,6 +532,7 @@ public class ReportActivity extends Activity implements
                 .build();
     }
 
+    /**checks if network is connected*/
     private boolean isNetworkConnected() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         return (cm.getActiveNetworkInfo() != null);
@@ -551,31 +550,43 @@ public class ReportActivity extends Activity implements
         mGoogleApiClient.disconnect();
     }
 
+    /**
+     * Checkbox for user to use current location. Attempts to get location, but doesn't allow the
+     * box to be checked if the location is 0,0 or the location is not turned on.
+     * @param view
+     */
     public void useCurrentLocation(View view){
                 //sets checkbox to user's current location if possible
                 CheckBox checkbox = (CheckBox)findViewById(R.id.currentlocationcheckbox);
+                ImageView image = (ImageView) findViewById(R.id.location_image);
                 if (checkbox.isChecked()){
-                        //turn on checkbox
-                        checkbox.setChecked(true);
-                        Location zero = new Location("");
+                    Location zero = new Location("");
                         zero.setLatitude(0.0);
                         zero.setLongitude(0.0);
                         if (mCurrentLocation == null || mCurrentLocation == zero) {
                                 checkbox.setChecked(false);
+                                image.setImageResource(R.drawable.ic_location_off_black_24dp);
                                 Toast.makeText(this, "Waiting for location...", Toast.LENGTH_SHORT).show();
                                 return;
                         } else {
-                                Toast.makeText(this, "Location: "+mCurrentLocation.getLatitude()+" "+mCurrentLocation.getLongitude(), Toast.LENGTH_SHORT).show();
+                            //turn on checkbox
+                            image.setImageResource(R.drawable.ic_location_on_black_24dp);
+                            checkbox.setChecked(true);
+                                //Toast.makeText(this, "Location: "+mCurrentLocation.getLatitude()+" "+mCurrentLocation.getLongitude(), Toast.LENGTH_SHORT).show();
                         }
-
                 }
                 else {
-                        //turn off checkbox
-                        checkbox.setChecked(false);
+                    //turn off checkbox
+                    checkbox.setChecked(false);
+                    image.setImageResource(R.drawable.ic_location_off_black_24dp);
                 }
         }
 
 
+    /**
+     * Checks that Google Play Services are installed. Doesn't do anything if not.
+     * @return
+     */
     public boolean checkGooglePlay(){
             int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
         if (ConnectionResult.SUCCESS == resultCode) {
@@ -586,7 +597,6 @@ public class ReportActivity extends Activity implements
             return false;
         }
     }
-
 
     /*
      * Called by Location Services when the request to connect the
@@ -618,27 +628,22 @@ public class ReportActivity extends Activity implements
         Toast.makeText(this, "Unable to connect", Toast.LENGTH_SHORT).show();
     }
 
+    /**
+     * // necessary to implement this even if don't use it
+     * @param location
+     */
     @Override
     public void onLocationChanged(Location location) {
         mCurrentLocation = location;
-        // necessary to implement this even if don't use it
+
     }
 
-
     /**
-     * todo: ?Saves checkbox and current location marker when activity is hidden
+     * May not be necessary since checkboxes persist across orientation changes.
      * @param outState
      */
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-       /** CheckBox checkbox = (CheckBox)findViewById(R.id.currentlocationcheckbox);
-        if (checkbox.isChecked()) {
-            outState.putBoolean("currentloc",true);
-            outState.putParcelable("markeroptions", options);
-            TextView textView = (TextView) findViewById(R.id.currentlocationtext);
-            outState.putCharSequence("currentlocationtext", textView.getText());
-        }
-        else outState.putBoolean("currentloc", false); **/
         super.onSaveInstanceState(outState);
     }
 

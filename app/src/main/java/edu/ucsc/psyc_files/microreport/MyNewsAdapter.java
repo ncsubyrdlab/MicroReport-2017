@@ -12,18 +12,13 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 /**
- * Created by Christy on 7/26/2015.
+ * A custom listview/recyclerview adapter to show Good News items.
  */
 public class MyNewsAdapter extends RecyclerView.Adapter<MyNewsAdapter.ViewHolder> {
-    //private String[][] mDataset; //0 is header, 1 is description
-    //private String mLink;   //needs to be an intent or activity?
+
     private ArrayList<BulletinBoard.NewsItem> mDataset;
 
-    // Provide a reference to the views for each data item
-    // Complex data items may need more than one view per item, and
-    // you provide access to all the views for a data item in a view holder
     public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-        // each data item is just a string in this case
         public TextView mHeading;
         public TextView mDescription;
         public TextView mTimestamp;
@@ -49,13 +44,11 @@ public class MyNewsAdapter extends RecyclerView.Adapter<MyNewsAdapter.ViewHolder
         }
     }
 
-    // Provide a suitable constructor (depends on the kind of dataset)
     public MyNewsAdapter(ArrayList<BulletinBoard.NewsItem> myDataset) {
-
         mDataset = myDataset;
     }
 
-    // Create new views (invoked by the layout manager)
+    /** Create new views (invoked by the layout manager) */
     @Override
     public MyNewsAdapter.ViewHolder onCreateViewHolder(ViewGroup viewGroup,
                                                    int i) {
@@ -67,7 +60,7 @@ public class MyNewsAdapter extends RecyclerView.Adapter<MyNewsAdapter.ViewHolder
         return new ViewHolder(itemView);
     }
 
-    // Replace the contents of a view (invoked by the layout manager)
+    /**Replace the contents of a view (invoked by the layout manager) */
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
 
@@ -78,10 +71,9 @@ public class MyNewsAdapter extends RecyclerView.Adapter<MyNewsAdapter.ViewHolder
         holder.mLink = item.getLink();
     }
 
-    // Return the size of your dataset (invoked by the layout manager)
+    /** Return the size of your dataset (invoked by the layout manager) */
     @Override
     public int getItemCount() {
             return mDataset.size();
     }
-
 }

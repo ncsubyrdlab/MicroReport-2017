@@ -41,6 +41,8 @@ import com.google.maps.android.clustering.ClusterItem;
 import com.google.maps.android.clustering.ClusterManager;
 import com.google.maps.android.clustering.view.DefaultClusterRenderer;
 
+import org.acra.ACRA;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
@@ -57,14 +59,15 @@ import java.util.TimeZone;
 
 /**
  * MicroReport 2.0
- * @author Christy M. Byrd, University of California, Santa Cruz
+ * @author Christy M. Byrd, University of California, Santa Cruz, cmbyrd@ucsc.edu
  * Copyright 2015
- * This Android app is used to report microaggressions and display them on a map. It displays a list of markers from a KML
- * file and allows user to post reports in the KML file. Utility pages display campus resources,
- * show a feedback form, and link to the study homepage
- * Requires Google Play Services and Android 3.0+
- * Uses Utility Library: https://github.com/googlemaps/android-maps-utils
- * and ACRA: https://github.com/ACRA/acra
+ * This Android app is used to report microaggressions and display them on a map. Requires Google
+ * Play Services and Android 3.0+
+ * The Main activity displays a map and a floating action button. The items are stored in myItemCollection,
+ * which is added to the map through the ClusterManager (not directly). filteredReports is used to
+ * store the user's reports only.
+ * Uses Utility Library for marker clustering: https://github.com/googlemaps/android-maps-utils
+ *
  */
 public class MainActivity extends Activity implements OnMapReadyCallback {
 
@@ -80,13 +83,16 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     private ActionBarDrawerToggle mDrawerToggle;
 
     /**
-     * Opens the main page and displays the reports on a map in clusters if necessary
+     * First checks if the device is registered using SharedPreferences. If not, redirects to
+     * Registration page. Currently downloads reports from xml file into cache and uses {@TransformReports}
+     * object to parse into Reports objects.
+     * Opens the main page and displays the reports on a map in clusters based on zoom level.
      * @param savedInstanceState The map clusters are saved in an array on orientation changes
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        setContentView(R.layout.activity_main);
         if (isNetworkConnected()) {//if network is not connected, don't do anything
             //check registration status
             SharedPreferences preferenceSettings;
@@ -98,7 +104,6 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                 startActivity(intent);
                 finish();
             }
-            setContentView(R.layout.activity_main);
             //if just an orientation change or no network connection, don't download new file
             if (savedInstanceState != null)  {
                 myItemCollection = savedInstanceState.getParcelableArrayList("items");
@@ -119,7 +124,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                 }
             }
         } else {    //end if network is connected
-            toastResult("No internet connection");
+            Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
         }
 
         //todo: change actionbar and overflow options
@@ -148,7 +153,9 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         getActionBar().setHomeButtonEnabled(true);
 
     }
-
+    /**
+     * ClickListener for navigation drawer.
+     */
     private class DrawerItemClickListener implements ListView.OnItemClickListener{
         @Override
         public void onItemClick(AdapterView parent, View view, int position, long id) {
@@ -156,6 +163,10 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         }
     }
 
+    /**
+     * Takes clicks on navigation drawer and opens appropriate activity. Then closes the drawer.
+     * @param position the position of the item clicked
+     */
     private void selectItem(int position){
         Intent intent;
         switch (position) {
@@ -187,8 +198,12 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         mDrawerLayout.closeDrawer(nav);
     }
 
+    /**
+     * Called from the AsyncTask in setUpMap() to display the map and add the markers from the
+     * ClusterManager. Also sets up the listview in landscape mode.
+     * @param mMap
+     */
     public void onMapReady(GoogleMap mMap) {
-        //this is called from the async task in setUpMap()
         //add stuff to map
         mMap.setMyLocationEnabled(true); //shows user location
         UiSettings settings = mMap.getUiSettings();
@@ -220,9 +235,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             list.setAdapter(adapter);
             list.setOnItemClickListener(mItemClickedHandler);
         }
-
     }
-
 
     /**checks whether the device is connected to an internet network*/
     private boolean isNetworkConnected() {
@@ -230,8 +243,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         return (cm.getActiveNetworkInfo() != null);
     }
 
-
-    /**save markers to an arraylist so don't have to re-download file on screen orientation changes*/
+    /**Save markers to an arraylist so don't have to re-download file on screen orientation changes*/
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putParcelableArrayList("items",myItemCollection);
@@ -257,21 +269,16 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         startActivity(intent);
     }
 
-    /**launches the appropriate action when the user clicks the menu*/
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Pass the event to ActionBarDrawerToggle, if it returns
-        // true, then it has handled the app icon touch event
+        /**launches the appropriate action when the user clicks the menu*/
+        //The action bar here includes the refresh button.
         if (mDrawerToggle.onOptionsItemSelected(item)) {
             return true;
         }
         Intent intent;
         switch (item.getItemId()) {
-            /** now a floating action button
-             * case R.id.action_report:
-                intent = new Intent(this, ReportActivity.class);
-                startActivity(intent);
-                return true; */
             case R.id.action_clear_cache:
                 updateMap();
                 return true;
@@ -281,7 +288,8 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     }
 
 
-    /**When the user clicks on a list item, the map zooms to the marker and opens the info window
+    /**Listview click listener (landscape only). When the user clicks on a list item, the map zooms
+     * to the marker and opens the info window.
      * https://github.com/ch8908/thor-android/blob/100ff882515be390c3e0ac7f705e1ec10c7d5d90/thor-android/src/main/java/com/osolve/thor/activity/MainActivity.java*/
     private AdapterView.OnItemClickListener mItemClickedHandler = new AdapterView.OnItemClickListener() {
         @Override
@@ -305,9 +313,13 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         }
     };
 
+    /**
+     * Connects to PHP script that copies report file with just display data, then
+     copies the processed reports file into the cache. The reports file is parsed into
+     two ArrayLists, one for all reports and one for the user's reports. At the end calls setUpMap().
+     Exceptions are displayed as toasts and sent to ACRA.
+     */
     private class downloadReports extends AsyncTask<Void, Void, String> {
-        //connects to PHP script that copies report file with just display data, then
-        // copies the processed reports file into the cache
         @Override
         protected String doInBackground(Void... params) {
             if (!isNetworkConnected()) {
@@ -337,21 +349,19 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                         in.close();
                         con.disconnect();
 
-                        //todo: check registration here?
-
                         return "Success";
                     } else return con.getResponseMessage();
                 } catch (Exception ex) {
+                    ACRA.getErrorReporter().handleSilentException(ex);
                     return ex.toString();
                 }
-
         }
 
         @Override
         protected void onPostExecute(String message) {
             super.onPostExecute(message);
             if (!message.contentEquals("Success")) { //don't report anything if successfully downloaded
-                toastResult(message + " in downloadReports");
+                Toast.makeText(getBaseContext(), message + " in downloadReports", Toast.LENGTH_SHORT).show();
             }
             else {
                 try {
@@ -363,6 +373,8 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                     //todo: streamline this by making myItemCollection and TransformReports the same?
                     myItemCollection = new ArrayList<MyItem>();
                     filteredReports = new ArrayList<MyItem>();
+                    SharedPreferences preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+                    String userPartID = preferenceSettings.getString("partID", "");
 
                     for (TransformReports.Report report : reports) {
                         //change uDate to readable format
@@ -392,8 +404,6 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
 
                         //flag for user's reports
                         boolean flag = false;
-                        SharedPreferences preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
-                        String userPartID = preferenceSettings.getString("partID", "");
                         if (report.partID != null && report.partID.length() >0 ) {
                             if (report.partID.compareTo(userPartID)==0) {
                                 flag = true;
@@ -415,14 +425,16 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                     }
                     setUpMap();
                 } catch (Exception ex) {
-                    toastResult(ex.toString() + " in TransformReports try");
-                    ex.printStackTrace();
+                    Toast.makeText(getBaseContext(), ex.toString() + " in TransformReports try", Toast.LENGTH_SHORT).show();
+                    ACRA.getErrorReporter().handleSilentException(ex);
                 }
             }
         }
-
     }
 
+    /**
+     * Calls the AsyncTask that sets up the map fragment
+     */
     private void setUpMap(){
         //check to Google Play Services is installed
         if (checkGooglePlay()) {
@@ -432,13 +444,11 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         } else Toast.makeText(this, "Install Google Play Services", Toast.LENGTH_SHORT).show();
     }
 
-    private void toastResult(String result){
-        Toast.makeText(this, ""+ result, Toast.LENGTH_SHORT).show();
-    }
-
+    /**
+     * Refreshes the map. Right now just reloads the activity.
+     */
     public void updateMap() {
-    //todo: update map here
-        Toast.makeText(this, "Updating map...", Toast.LENGTH_SHORT).show();
+         Toast.makeText(this, "Updating map...", Toast.LENGTH_SHORT).show();
         //todo: this creates a "file not found error" but changing orientation is OK
         /**File cacheDir = getCacheDir();
          File[] files = cacheDir.listFiles();
@@ -451,7 +461,9 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         startActivity(intent);
         finish();
     }
-    /**creates my own cluster item type that includes the title and snippet (uses the clustering utility library)*/
+    /**Creates my own cluster item type that includes the title and snippet, as well as a date for
+     * sorting and a date for displaying, and a flag to indicate the user's reports.
+     * Uses the clustering utility library)*/
     public static class MyItem implements ClusterItem, Parcelable {
         private final String displayDate;
         private final String date;
@@ -521,16 +533,15 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         };
     }
 
-    /**my own version of cluster renderer (from clustering utility library)
-     * shows info window with title and snippet, and blue markers*/
+    /**My own version of cluster renderer (from clustering utility library)
+     * shows info window with title and snippet, and blue markers (slightly darker blue for user's
+     * reports. */
      static class MyClusterRenderer extends DefaultClusterRenderer<MyItem> {
 
         public MyClusterRenderer(Context context, GoogleMap map,
                                  ClusterManager<MyItem> clusterManager) {
             super(context, map, clusterManager);
         }
-
-
 
         @Override
         protected void onBeforeClusterItemRendered(MyItem item, MarkerOptions markerOptions) {
@@ -546,7 +557,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         }
     }
 
-    /**my info window design, shows the whole description, with the timestamp in small text below*/
+    /**My info window design, shows the whole description, with the timestamp in small text below*/
     private class MyInfoWindow implements GoogleMap.InfoWindowAdapter{
 
         @Override
@@ -650,7 +661,10 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         }
     }
 
-    //button presses
+    /**
+     * Shows the reports in the list view in ascending order
+     * @param view
+     */
     public void sortAscending(View view){
         //check whether to sort all reports or filtered report
         ToggleButton button = (ToggleButton) findViewById(R.id.my_reports);
@@ -687,6 +701,10 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         adapter.notifyDataSetChanged();
     }
 
+    /**
+     * Shows the reports in the list view in descending order
+     * @param view
+     */
     public void sortDescending(View view) {
         //check whether to sort all reports or filtered report
         ToggleButton button = (ToggleButton) findViewById(R.id.my_reports);
@@ -722,6 +740,10 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         adapter.notifyDataSetChanged();
     }
 
+    /**
+     * Displays only the user's reports in the listview
+     * @param view
+     */
     public void viewMyReports (View view){
         boolean on = ((ToggleButton) view).isChecked();
         if (on) {
@@ -751,8 +773,6 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         super.onConfigurationChanged(newConfig);
         mDrawerToggle.onConfigurationChanged(newConfig);
     }
-
-
 }
 
 

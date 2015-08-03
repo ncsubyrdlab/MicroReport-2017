@@ -34,6 +34,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.acra.ACRA;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -42,12 +44,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
  * Registration screen asking for email and name, assigns participant ID, sends those along with
- * Installation ID and Device ID to user file; sets sharedPreferences
- * Is displayed upon first install and as first screen as long as not registered, no menu option to go to
- * Based on Login Activity template
+ * Installation ID and Device ID to the user file on the server, then sets sharedPreferences with
+ * participant ID and email address. Is displayed as first screen as long as the installation is
+ * not registered.
+ * Based on Login Activity template.
  */
 public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
 
@@ -68,7 +70,10 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
     private SharedPreferences preferenceSettings;
     private SharedPreferences.Editor preferenceEditor;
 
-
+    /**
+     * Sets up the layout and listeners. If there is no internet connection, a message is displayed.
+     * @param savedInstanceState
+     */
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
@@ -133,6 +138,9 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
         }
     }
 
+    /**
+     * Uses device contacts to AutoComplete email field.
+     */
     private void populateAutoComplete() {
         if (VERSION.SDK_INT >= 14) {
             // Use ContactsContract.Profile (API 14+)
@@ -173,7 +181,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
             cancel = true;
         }
 
-        // Check for a valid email address.
+        // Check for a valid email address (contains a @).
         if (TextUtils.isEmpty(email)) {
             mEmailView.setError(getString(R.string.error_field_required));
             focusView = mEmailView;
@@ -281,7 +289,6 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
         };
 
         int ADDRESS = 0;
-        int IS_PRIMARY = 1;
     }
 
     /**
@@ -314,8 +321,11 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
         }
     }
 
+    /**
+     * Create adapter to tell the AutoCompleteTextView what to show in its dropdown list.
+     * @param emailAddressCollection
+     */
     private void addEmailsToAutoComplete(List<String> emailAddressCollection) {
-        //Create adapter to tell the AutoCompleteTextView what to show in its dropdown list.
         ArrayAdapter<String> adapter =
                 new ArrayAdapter<String>(LoginActivity.this,
                         android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
@@ -324,7 +334,20 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
     }
 
     /**
-     * Represents an asynchronous registration task
+     * AsyncTask to connect to server and attempt registration. The php file checks if the email
+     * address and installation ID are unique. If the installation ID is registered, the user can
+     * click Finish and move on (this could happen if SharedPreferences as cleared but the app was
+     * not uninstalled). If the email address is registered, this probably means the user has re-installed
+     * the app or is using a different device. The user is invited to Register New Device (but this
+     * is really just registering a new installation). The php script is run again with the newDevice
+     * flag to "true".
+     * <p>If the email address and installation ID are unique, a new registration is created and
+     * "Registration Successful" is echoed. Otherwise, errors are displayed. </p>
+     * <p>In successful registration cases, the participant ID number is echoed and saved into
+     * SharedPreferences.</p>
+     *
+     * Android ID is collected but not checked
+     * because some models do not have a unique Android ID.
      */
     public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
 
@@ -342,7 +365,6 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
             mAndroidid = androidid;
             mNewDevice = newDevice;
         }
-
 
         @Override
         protected Boolean doInBackground(Void... params) {
@@ -394,6 +416,8 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
         protected void onPostExecute(final Boolean success) {
             mAuthTask = null;
             showProgress(false);
+
+
             mResult = (TextView) findViewById(R.id.result);
             mResult.setText(result);
             mResult.setContentDescription(result);
@@ -412,7 +436,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                     mFinishButton.setOnClickListener(finishClickHandler);
                     mNewButton = (Button) findViewById(R.id.new_device_button);
                     mNewButton.setVisibility(View.GONE);
-                    //save participantID and email in sharedpreferences
+                    //save participantID and email in sharedpreferences and ACRA
                     int i = result.lastIndexOf("ID: ");
                     String partID = result.substring(i+4, result.length());
                     preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
@@ -421,6 +445,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                     preferenceEditor.putString("partID", partID);
                     preferenceEditor.putString("emailAddress", mEmail);
                     preferenceEditor.apply();
+                    ACRA.getErrorReporter().putCustomData("partID", partID);
 
                 } else if (result.contains("This device is already registered")) {
                     //set shared preferences and show finish button
@@ -474,7 +499,9 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
 
     }
 
-
+    /**
+     * Click listener for the Finish button (displays Finish or Cancel depending on circumstances).
+     */
     private OnClickListener finishClickHandler = new OnClickListener() {
         @Override
         public void onClick(View view) {
@@ -490,6 +517,11 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
         return (cm.getActiveNetworkInfo() != null);
     }
 
+    /**
+     * When email address is already registered, runs the AsyncTask again with the email address
+     * provided and the newDevice flag set to true;
+     * @param email
+     */
     private void registerNewDevice(String email) {
         showProgress(true);
         String androidId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
@@ -497,6 +529,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
         mAuthTask.execute((Void) null);
     }
 
+    /**Checks if the device is registered. */
     private boolean Registered(){
         SharedPreferences preferenceSettings;
         preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);

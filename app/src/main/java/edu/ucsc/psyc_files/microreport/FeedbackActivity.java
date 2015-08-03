@@ -25,7 +25,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 /**
- * Feedback form that posts to AFS space
+ * Displays a feedback form that posts to log file on the server as action:feedback.
  */
 public class FeedbackActivity extends Activity {
     private ListView nav;
@@ -36,7 +36,7 @@ public class FeedbackActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feedback);
-        //getActionBar().setDisplayHomeAsUpEnabled(true);
+
         //navigation drawer
         String[] menuList = getResources().getStringArray(R.array.menu);
         nav = (ListView) findViewById(R.id.navigation_drawer);
@@ -68,6 +68,11 @@ public class FeedbackActivity extends Activity {
         return (cm.getActiveNetworkInfo() != null);
     }
 
+    /**
+     * Uses an AsyncTask to submit the feedback to the server. Passes along the installation ID then
+     * goes back to the Home screen. A toast confirms the status of the feedback (echoed from php file).
+     * @param view
+     */
     public void submitFeedback (View view) {
         if (isNetworkConnected()) { //only do if network is connected
         //go back to main view
@@ -76,11 +81,15 @@ public class FeedbackActivity extends Activity {
         //open connection and post feedback
         EditText text = (EditText) findViewById(R.id.feedbacktext);
         //String androidId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
-        String feedback = "feedback="+Uri.encode(text.getText().toString())+"&installationID="+Uri.encode(Installation.id(this));
-        new postFeedback().execute(feedback);
+        String output = "feedback="+Uri.encode(text.getText().toString())+"&installationID="+Uri.encode(Installation.id(this));
+        new postFeedback().execute(output);
         } else Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
     }
 
+    /**
+     * Opens a connection to the server and posts feedback using the php file, which echoes the
+     * status back.
+     */
     private class postFeedback extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... params) {
@@ -121,7 +130,9 @@ public class FeedbackActivity extends Activity {
         }
     }
 
-
+    /**
+     * ClickListener for navigation drawer.
+     */
     private class DrawerItemClickListener implements ListView.OnItemClickListener{
         @Override
         public void onItemClick(AdapterView parent, View view, int position, long id) {
@@ -129,6 +140,10 @@ public class FeedbackActivity extends Activity {
         }
     }
 
+    /**
+     * Takes clicks on navigation drawer and opens appropriate activity. Then closes the drawer.
+     * @param position the position of the item clicked
+     */
     private void selectItem(int position){
         Intent intent;
         switch (position) {
@@ -171,9 +186,9 @@ public class FeedbackActivity extends Activity {
         mDrawerToggle.onConfigurationChanged(newConfig);
     }
 
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        //passes menu clicks to the navigation drawer instead of action bar
         if (mDrawerToggle.onOptionsItemSelected(item)) {
             return true;
         }

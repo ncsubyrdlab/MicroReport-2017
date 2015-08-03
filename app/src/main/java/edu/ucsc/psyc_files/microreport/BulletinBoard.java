@@ -1,12 +1,15 @@
 package edu.ucsc.psyc_files.microreport;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -30,8 +33,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
-//https://developer.android.com/training/material/lists-cards.html#Dependencies
+/**
+ * The Good News board displays study information and positive resources using Cards and RecyclerView.
+ */
 public class BulletinBoard extends Activity {
     private RecyclerView mRecyclerView;
     private RecyclerView.Adapter mAdapter;
@@ -41,7 +47,12 @@ public class BulletinBoard extends Activity {
     private ActionBarDrawerToggle mDrawerToggle;
     private static final String ns = null;
 
-
+    /**
+     * Sets up the layout and click listeners, then initiates the Async Task to download the news.
+     * Items are stored in NewsItem objects. Displays those objects on cards using {@MyNewsAdapter.java}.
+     * Note that the links are not connected directly to the card but to the view group (viewholder).
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,9 +62,23 @@ public class BulletinBoard extends Activity {
         mRecyclerView = (RecyclerView) findViewById(R.id.cardList);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        SwipeRefreshLayout mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                //clear news items
+                news.clear();
+                news.add(new NewsItem("Submit Good News", getBaseContext().getResources().getString(R.string.good_news), "mailto:microreport-goodnews-group@ucsc.edu", new Date()));
+                //refresh items
+                new getNews().execute();
+            }
+        });
+
         //get news items
+        mSwipeRefreshLayout.setRefreshing(true); //doesn't show progress icon
         new getNews().execute();
         news = new ArrayList<NewsItem>();
+        news.add(new NewsItem("Submit Good News", this.getResources().getString(R.string.good_news), "mailto:microreport-goodnews-group@ucsc.edu", new Date()));
         mAdapter = new MyNewsAdapter(news);
         mRecyclerView.setAdapter(mAdapter);
 
@@ -82,11 +107,22 @@ public class BulletinBoard extends Activity {
         getActionBar().setHomeButtonEnabled(true);
     }
 
+    /**
+     * Connects to the MicroReport Good News Google Group and downloads the RSS feed into NewsItem
+     * objects. Updates adapter and turns off progress icon (for refresh-on-swipe). If there is an
+     * error, a card is created that displays the exception text.
+     * XML parsing based on https://androidcookbook.com/Recipe.seam?recipeId=2217
+     */
     private class getNews extends AsyncTask<Void, Void, ArrayList<NewsItem>> {
         @Override
         protected ArrayList<NewsItem> doInBackground(Void... params) {
+            if (!isNetworkConnected()) {
+                //cancel if network is not connected
+                news.add(new NewsItem("No Internet Connection", "Please connect to the internet", null ,new Date()));
+                return news;
+            }
+
             try {
-                //URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/news.xml");
                 URL url = new URL("https://groups.google.com/a/ucsc.edu/forum/feed/microreport-goodnews-group/msgs/rss.xml?num=50");
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
@@ -100,7 +136,6 @@ public class BulletinBoard extends Activity {
                     InputStream in = new BufferedInputStream(con.getInputStream());
                     XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
                     XmlPullParser parser  = factory.newPullParser();
-                    //https://androidcookbook.com/Recipe.seam?recipeId=2217
                     parser.setInput(in, "UTF-8");
                     int eventType = parser.getEventType();
 
@@ -118,8 +153,9 @@ public class BulletinBoard extends Activity {
                                 link = parser.getText();
                             }
                             if ("pubDate".equals(currentTag)) {
-                                SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss", Locale.US);
-                                //EEE, dd MMM yyyy hh:mm:ss a
+                                SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US);
+                                sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                                //Sat, 01 Aug 2015 19:13:17 UTC
                                 try {
                                     timestamp = sdf.parse(parser.getText());
                                 }
@@ -150,19 +186,18 @@ public class BulletinBoard extends Activity {
         @Override
         protected void onPostExecute(ArrayList<NewsItem> news) {
             super.onPostExecute(news);
+            //turn off refreshing indicator
+            SwipeRefreshLayout mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
+            mSwipeRefreshLayout.setRefreshing(false);
             //reset adapter
             mAdapter.notifyDataSetChanged();
         }
     }
 
-    public void onCardClick(View view) {
-        //go to link connected with card
-        //Intent intent = new Intent(this, ReportActivity.class);
-        //startActivity(intent);
-        //use? http://sapandiwakar.in/recycler-view-item-click-handler/
-        //http://stackoverflow.com/questions/24885223/why-doesnt-recyclerview-have-onitemclicklistener-and-how-recyclerview-is-dif
-    }
-
+    /**
+     * Constructs the NewsItem that holds a title, text, URL, and timestamp for items from an RSS feed.
+     * All are strings except timestamp, which is a Date.
+     */
     public static class NewsItem {
         public final String title;
         public final String text;
@@ -193,8 +228,9 @@ public class BulletinBoard extends Activity {
         }
     }
 
-
-
+    /**
+     * ClickListener for navigation drawer.
+     */
     private class DrawerItemClickListener implements ListView.OnItemClickListener{
         @Override
         public void onItemClick(AdapterView parent, View view, int position, long id) {
@@ -202,6 +238,10 @@ public class BulletinBoard extends Activity {
         }
     }
 
+    /**
+     * Takes clicks on navigation drawer and opens appropriate activity. Then closes the drawer.
+     * @param position the position of the item clicked
+     */
     private void selectItem(int position){
         Intent intent;
         switch (position) {
@@ -238,6 +278,7 @@ public class BulletinBoard extends Activity {
         super.onPostCreate(savedInstanceState);
         mDrawerToggle.syncState();
     }
+
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
@@ -246,10 +287,18 @@ public class BulletinBoard extends Activity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        //passes menu clicks to the navigation drawer instead of action bar
         if (mDrawerToggle.onOptionsItemSelected(item)) {
             return true;
         }
         return false;
     }
+
+    /**Checks whether the device is connected to an internet network*/
+    private boolean isNetworkConnected() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        return (cm.getActiveNetworkInfo() != null);
+    }
+
 }
 

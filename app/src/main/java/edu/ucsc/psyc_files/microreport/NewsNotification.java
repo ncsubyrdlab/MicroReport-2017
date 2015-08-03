@@ -10,6 +10,9 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
+/**
+ * The structure of the notification that is called by the Notification Service.
+ */
 public class NewsNotification {
     /**
      * The unique identifier for this type of notification.
@@ -19,12 +22,7 @@ public class NewsNotification {
     public static void notify(final Context context,
                               final String notificationTitle, final String notificationDetail, final int number) {
         final Resources res = context.getResources();
-
-        // This image is used as the notification's large icon (thumbnail).
-        // TODO: Remove this if your notification has no relevant thumbnail.
         final Bitmap picture = BitmapFactory.decodeResource(res, R.drawable.ic_microreport);
-
-
         final String ticker = "Good News: "+ notificationTitle;
         final String title = "Good News: "+ notificationTitle;
         final String text = notificationDetail;
@@ -51,8 +49,8 @@ public class NewsNotification {
                 //.setNumber(number)
                 .setStyle(new Notification.BigTextStyle()   //expanded text
                         .bigText(text)
-                        .setBigContentTitle(title)
-                        .setSummaryText("MicroReport Good News"))
+                        .setBigContentTitle(title))
+                //        .setSummaryText("MicroReport Good News"))
                 .setContentIntent(resultPendingIntent)
                 .setAutoCancel(true);
 
@@ -61,34 +59,5 @@ public class NewsNotification {
         final NotificationManager nm = (NotificationManager) context
                 .getSystemService(Context.NOTIFICATION_SERVICE);
         nm.notify(NOTIFICATION_TAG, 0, builder.build());
-        //notify(context, builder.build());   //sends through code below
     }
-
-    /**
-    @TargetApi(Build.VERSION_CODES.ECLAIR)
-    private static void notify(final Context context, final Notification notification) {
-        final NotificationManager nm = (NotificationManager) context
-                .getSystemService(Context.NOTIFICATION_SERVICE);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
-            nm.notify(NOTIFICATION_TAG, 0, notification);
-        } else {
-            nm.notify(NOTIFICATION_TAG.hashCode(), notification);
-        }
-    }
-
-    /**
-     * Cancels any notifications of this type previously shown using
-     * {@link #notify(Context, String, int)}.
-
-    @TargetApi(Build.VERSION_CODES.ECLAIR)
-    public static void cancel(final Context context) {
-        final NotificationManager nm = (NotificationManager) context
-                .getSystemService(Context.NOTIFICATION_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
-            nm.cancel(NOTIFICATION_TAG, 0);
-        } else {
-            nm.cancel(NOTIFICATION_TAG.hashCode());
-        }
-    }**/
 }

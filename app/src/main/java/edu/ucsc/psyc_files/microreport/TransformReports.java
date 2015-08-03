@@ -1,7 +1,5 @@
 package edu.ucsc.psyc_files.microreport;
 
-import android.app.Activity;
-import android.content.SharedPreferences;
 import android.util.Xml;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -16,12 +14,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by Christy Byrd on 6/20/2015.
- * this class takes process_reports.xml file and translates into KML
- * also performs any sorting and searching
+ * Takes the process_reports.xml and translates into Report objects to be displayed on the map
+ * in {@MainActivity}. Needs to be replaced.
  * XmlPullParser code based on: http://developer.android.com/training/basics/network-ops/xml.html
+ * but note that this is so much more complicated than the code from Android Cookbook (see {@BulletinBoard.java}
  */
-public class TransformReports {    //has to extend activity to use sharedpreferences?
+public class TransformReports {
     List<TransformReports.Report> reports;
     File reportsFile;
     private static final String ns = null;
@@ -57,7 +55,6 @@ public class TransformReports {    //has to extend activity to use sharedprefere
         parser.nextTag();
         return readFeed(parser);
     }
-
 
     private List<TransformReports.Report> readFeed(XmlPullParser parser) throws XmlPullParserException, IOException {
         List<TransformReports.Report> reports = new ArrayList<TransformReports.Report>();

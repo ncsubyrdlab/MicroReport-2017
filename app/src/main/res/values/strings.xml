@@ -66,14 +66,10 @@
 
     <!-- Get Help page -->
     <string name="settings">Settings</string>
-    <string name="resources"><b>How to report a microaggression:</b>
-     \n1. Click the marker icon.
-     \n\n2. Fill in as much information as you are comfortable with. In the \"What happened\" section, it is best to include where you are (i.e., classroom, bike path, dining hall), the main actors, your emotional reactions, and how the situation was resolved (if it was).
-	\n\n3. DO NOT include any information that could be used to identify others or yourself, such as names or specific titles. Even information like \"my psych professor\" or \"my CA\" could be used to narrow down the particular person in certain locations. It is best to generally say \"my professor\", \"a staff member\", or \"another student\".
-       \n\nDO include the group membership of the person if it helps explain the microaggression. For example, \"a white student\" or \"a male staff member\". Be careful about including information about yourself as well. Instead of saying that you are a resident in a particular building, you might just say that you are a student in Oakes or College 9.
-	\n\n4. Use the Hate/Bias Reporting System if you want a response. The goal of the study is just to track microaggressions. If you would like a response from the administration or want to make sure an event is more widely known, go to ReportHate.ucsc.edu and submit a report.
-\n\nRemember that we are interested in the event as you experience it. It\'s ok if you\'re not sure the event was a microaggression or if others don\'t have the same reaction that you do. If you need additional support, contact us or one of the organizations below:
+    <string name="resources">
+        <h1><b>Resources</b></h1>
         \n\n<i><b>In an emergency, or if you see a crime in progress, call 911.</b></i>
+        \n\nThis app is designed to aid in reporting microaggressions as an educational and supportive resource. If you would like a response from authorities about an incident, go to http://reportHate.ucsc.edu and submit a hate/bias report.
         \n\n<b>Police Non-Emergency</b> (831) 459-2231
         \n<b>Anonymous Tip Line</b> (831) 459-3TIP
     \n<b>Counseling and Psychological Services</b> (831) 459-2628
@@ -85,24 +81,68 @@
     \n     El Centro (831) 459-2427
     \n<b>Student Health Center</b> (831) 459-2211; Appointment Scheduling (831) 459-2500 healthcenter@ucsc.edu
     \n<b>Student Services Main Office</b> (831) 459-4446 studentservices@ucsc.edu
-    \n\n<b>What is the goal of the beta-test?</b>
-        \nThe goal is to test an app that can provide more information about when and where microaggressions
-happen. We are asking you to report any microaggressions you experience this quarter, on or off-campus. You
-are not required to report and you can withdraw from the study at any time. Please inform the research team
-as soon as possible if you no longer want to participate.
-        \n\n<b>What are microaggressions?</b>
-        \nMicroaggressions are subtle insults directed toward minority group members. They can be conscious or unconscious, and verbal or non-verbal.
-        \n\n<b>My app crashed! What do I do?</b>
-        \nIf you can get the app working, send a bug report through the Give Feedback page. Tell us as much information about what happened and how you tried to get the app working again. For example, what state the device was in when it crashed (did you have internet access?, did you just reboot?). Also tell us the content of any error messages you saw. If you can\'t get the app to work, email us at cmbyrd@ucsc.edu.
-        \n\nSome suggestions for getting the app to work are:
-        \n-Clear the app cache (Settings | Apps | MicroReport | Clear cache)
-        \n-Restart your device
-        \n-Uninstall the app. If you uninstall the app, you will need to contact us for a new installation file.
-
-        \n\n<b>What if I have another question?</b>
-        \nUse the \"Give Feedback\" form to report problems with the app or post general comments. If you would like to contact the research team directly, contact
-        Dr. Christy Byrd at cmbyrd@ucsc.edu or (831) 459-3970.
+        \n\n<h1><b>MicroReport User Guide</b></h1>
+        \nAndroid Version 2.0
+        \nPDF version: http://people.ucsc.edu/~cmbyrd/AndroidUserGuide.pdf
+\n\nMicroReport is a mobile app that allows community members to report microaggressions they experience and to view reports of others. Microaggressions are subtle slights and indignities based on an identity like race, gender, or sexual orientation. MicroReport provides a way for individuals to better cope with and understand microaggressions.
+\n\n<b>Registration</b>
+\nThe first time you open MicroReport after installing or re-installing it, you will be asked to register your device. Your name and email address are required. This information is stored on a password-protected server that only the research team has access to. Reports are displayed with no identifying information. If you are re-installing the app, you should use the same email address and select \"Register New Device\" when prompted.
+\n\n<b>Home</b>
+\nThe home screen displays the map of microaggressions in your community. You can zoom in and out using pinch gestures and pan using swipes to see different parts of the map. A large number of reports in one area will cluster if you zoom out.
+\n\nClick on a marker  to read the report from that location. In landscape view, you can see a list of all the reports and click on an item to pan to that marker on the map.
+\n\nTap the refresh icon  to update the map at any time.
+\n\nClick the New Report button  to submit a microaggression report.
+\n\n<b>Submitting a Report</b>
+\nIn the description field, say what happened, who was involved (without giving any names or identifying information) and how you felt about it.
+\n\nIf you have your location turned on, you can click the \"Use current location\" checkbox to automatically record your location. Otherwise, use the drop-down menu to select a building on campus or type in the name of another location.
+\n\nIf you don\'t use your location or select a building, your report will automatically appear at the center of campus.
+\n\nOptionally, tell us what identities you think the microaggression was related to and how much the incident bothered you.
+\n\nClick \"Submit\" to post your report to the map. Your report will be immediately visible.
+\n\n<b>Navigation</b>
+\nSwipe from the left side of the screen or click the navigation icon  in the top left to open the navigation menu. Click on a screen name to go to that screen.
+\n\n<b>Good News</b>
+\nThe Good News page features study updates and submitted content. Click on an item to read the full post in your web browser. You can submit resources and affirmations to the research team at microreport-goodnews-group@ucsc.edu.
+\n\nWe\'ll post:
+\n* Campus events
+\n* Local events
+\n* Information about supportive or interesting resources
+\n* Affirmations and positive messages
+\n\nWe will not post news articles, promotions for commercial services, neutral or negative posts, or any information that could identify an individual.
+\n\n<b>Notifications</b>
+\nAbout once a day, MicroReport will check for new Good News and notify you if there are any updates. You can disable notifications by going to Settings | Apps | MicroReport and unchecking the box that says \"Show notifications\".
+\n\n<b>Get Help</b>
+\nThis page is a list of campus resources if you need support.
+\n\n<b>Give Feedback</b>
+\nUse this form to send us any feedback about the study or the app.
+\n\n<b>Study Website</b>
+\nThis will take you to the main website for the study in your web browser.
+\n\n<b>End User License Agreement</b>
+\nhttp://people.ucsc.edu/~cmbyrd/MicroReport_EULA.html
     </string>
+    <string name = "old_resources_text"><b>How to report a microaggression:</b>
+     \n1. Click the marker icon.
+     \n\n2. Fill in as much information as you are comfortable with. In the \"What happened\" section, it is best to include where you are (i.e., classroom, bike path, dining hall), the main actors, your emotional reactions, and how the situation was resolved (if it was).
+	\n\n3. DO NOT include any information that could be used to identify others or yourself, such as names or specific titles. Even information like \"my psych professor\" or \"my CA\" could be used to narrow down the particular person in certain locations. It is best to generally say \"my professor\", \"a staff member\", or \"another student\".
+       \n\nDO include the group membership of the person if it helps explain the microaggression. For example, \"a white student\" or \"a male staff member\". Be careful about including information about yourself as well. Instead of saying that you are a resident in a particular building, you might just say that you are a student in Oakes or College 9.
+	\n\n4. Use the Hate/Bias Reporting System if you want a response. The goal of the study is just to track microaggressions. If you would like a response from the administration or want to make sure an event is more widely known, go to ReportHate.ucsc.edu and submit a report.
+\n\nRemember that we are interested in the event as you experience it. It\'s ok if you\'re not sure the event was a microaggression or if others don\'t have the same reaction that you do. If you need additional support, contact us or one of the organizations below:
+        \n\n<b>What is the goal of the beta-test?</b>
+    \nThe goal is to test an app that can provide more information about when and where microaggressions
+    happen. We are asking you to report any microaggressions you experience this quarter, on or off-campus. You
+    are not required to report and you can withdraw from the study at any time. Please inform the research team
+    as soon as possible if you no longer want to participate.
+    \n\n<b>What are microaggressions?</b>
+    \nMicroaggressions are subtle insults directed toward minority group members. They can be conscious or unconscious, and verbal or non-verbal.
+    \n\n<b>My app crashed! What do I do?</b>
+    \nIf you can get the app working, send a bug report through the Give Feedback page. Tell us as much information about what happened and how you tried to get the app working again. For example, what state the device was in when it crashed (did you have internet access?, did you just reboot?). Also tell us the content of any error messages you saw. If you can\'t get the app to work, email us at cmbyrd@ucsc.edu.
+    \n\nSome suggestions for getting the app to work are:
+    \n-Clear the app cache (Settings | Apps | MicroReport | Clear cache)
+    \n-Restart your device
+    \n-Uninstall the app. If you uninstall the app, you will need to contact us for a new installation file.
+
+    \n\n<b>What if I have another question?</b>
+    \nUse the \"Give Feedback\" form to report problems with the app or post general comments. If you would like to contact the research team directly, contact
+    Dr. Christy Byrd at cmbyrd@ucsc.edu or (831) 459-3970.</string>
 
     <!--Feedback Page-->
     <string name="feedback"><b>Report bugs or an error message, or give any other feedback</b></string>
@@ -116,10 +156,9 @@ as soon as possible if you no longer want to participate.
     <string name="prompt_email">Email address</string>
     <string name="prompt_name">First name</string>
     <string name="action_sign_in">Register</string>
-    <string name="action_sign_in_short">Register</string>
 
     <string name="registerhead"><b>Register Your Device</b></string>
-        <string name = "registersub">Enter your email address and name below.
+        <string name = "registersub">Enter your email address and name below.\nAn internet connection is required to register.
         \nBy registering, you agree to the conditions of the End User License Agreement \nhttp://people.ucsc.edu/~cmbyrd/MicroReport_EULA.html
         </string>
     <string name="error_invalid_email">This email address is invalid</string>
@@ -128,5 +167,8 @@ as soon as possible if you no longer want to participate.
     <string name="new_device_button">Register New Device</string>
     <string name="action_settings">Settings</string>
     <string name="service_name">MicroReport Background Notification Service</string>
+
+    <!--Good News page-->
+    <string name="good_news">Send us your good news and affirmations at microreport-goodnews-groups@ucsc.edu. You can submit interesting events and resources from on and off campus as well as post affirmations and other positive messages. We\'ll also use this space to keep you updated about the study.</string>
 
 </resources>

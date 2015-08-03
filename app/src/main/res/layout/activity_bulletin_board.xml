@@ -3,25 +3,24 @@
     android:layout_width="match_parent"
     android:id="@+id/drawer_layout"
     >
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:paddingLeft="8dp"
-    android:paddingRight="8dp"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:orientation="vertical"
-    tools:context="edu.ucsc.psyc_files.microreport.BulletinBoard"
-    style="@style/UCSCBlue">
-
+    <android.support.v4.widget.SwipeRefreshLayout
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/swipeRefreshLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context="edu.ucsc.psyc_files.microreport.BulletinBoard"
+        style="@style/UCSCBlue"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:paddingBottom="@dimen/activity_vertical_margin">
     <android.support.v7.widget.RecyclerView
         android:id="@+id/cardList"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:onClick="onCardClick"
+        android:scrollbars="vertical"
         />
-
-</LinearLayout>
+</android.support.v4.widget.SwipeRefreshLayout>
     <ListView
         android:id="@+id/navigation_drawer"
         android:layout_width="240dp"

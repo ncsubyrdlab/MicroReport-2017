@@ -25,67 +25,73 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 /**
- * Setup for ACRA error reporting. When an exception is thrown, the app shows a toast and tries
- * to send a report to the file. Can save reports if no internet connection, but this does not
- * happen consistently.
- * Crash reports include Installation ID, stacktrace, and device info
- * Also setup for Google Analytics and registration flag
+ * Sets up ACRA error reporting, Google Analytics, and the service to check for notifications for
+ * Good News. Also checks if the installation has been registered.
  */
-@ReportsCrashes(
-        formKey = "",
-        mode = ReportingInteractionMode.TOAST,
+@ReportsCrashes(mode = ReportingInteractionMode.TOAST,
         forceCloseDialogAfterToast = false,
         resToastText = R.string.crash_toast_text,
-        formUri = "http://people.ucsc.edu/~cmbyrd/microreport/errorlogs/logerrors.php"
-        ,formUriBasicAuthLogin = "MRapp",
-        formUriBasicAuthPassword = "sj8719i",
+        formUri = "http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/logerrors.php",
         disableSSLCertValidation = true,
-        customReportContent = {ReportField.DEVICE_ID, ReportField.APP_VERSION_NAME, ReportField.ANDROID_VERSION, ReportField.PHONE_MODEL, ReportField.CUSTOM_DATA, ReportField.STACK_TRACE, ReportField.LOGCAT }
+        logcatArguments = { "-t", "100", "-v", "long", "ActivityManager:I", "MicroReport:D", "*:S" },
+        additionalSharedPreferences={"microreport_settings"},
+        customReportContent = {ReportField.APP_VERSION_NAME, ReportField.CUSTOM_DATA, ReportField.ANDROID_VERSION,
+                ReportField.PHONE_MODEL, ReportField.STACK_TRACE, ReportField.LOGCAT
+                }
 )
+
 public class ApplicationStartUp extends Application {
     public static GoogleAnalytics analytics;
     public static Tracker tracker;
+    String partID;
 
-       @Override
+    /**
+     * Initiates registration check, ACRA and Google Analytics set-up
+     */
+    @Override
     public void onCreate() {
         super.onCreate();
+        //get participant ID for registration check
+        String installationID = Installation.id(this);
+        SharedPreferences preferenceSettings;
+        preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+        partID = preferenceSettings.getString("partID", "false");
 
+        //check if device is registered and set shared preferences
+        new checkRegistration().execute();
+
+         //set up ACRA and adds installation ID to custom fields
         ACRA.init(this);
+        ACRA.getErrorReporter().putCustomData("InstallationID", installationID);
+        ACRA.getErrorReporter().putCustomData("InstallationType", "AndroidApp2.0");
+
+        //set up Google Analytics
         analytics = GoogleAnalytics.getInstance(this);
         analytics.setLocalDispatchPeriod(1800);
-
         tracker = analytics.newTracker("UA-58131743-2");
         tracker.enableExceptionReporting(true);
         tracker.enableAutoActivityTracking(true);
-           tracker.set("&uid", Installation.id(this));
+        tracker.set("&uid", installationID);
 
-           //check if device is registered and set shared preferences
-           new checkRegistration().execute();
+        //check for notifications after 2 minutes and every 23 hours
+        Intent notificationIntent = new Intent(this, NotificationService.class);
+        PendingIntent pi = PendingIntent.getService(this, 0,notificationIntent, 0);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        //restart the alarm
+        alarmManager.cancel(pi);
+        //alarmManager.setInexactRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + 30000, 60000, pi);
+        alarmManager.setInexactRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime()+120000, 82800000, pi);
 
-           //check for notifications after 8 hours and about every 8 hours after that
-           Intent notificationIntent = new Intent(this, NotificationService.class);
-           PendingIntent pi = PendingIntent.getService(this, 0,notificationIntent, 0);
-           AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-           //restart the alarm
-           alarmManager.cancel(pi);
-           //alarmManager.setInexactRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + 30000, 60000, pi);
-           alarmManager.setInexactRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + 120000, 28800000, pi);
     }
 
-   /** private void setSharedPreferences() {
-        //save registration status to sharedpreferences so registration screen will show first
-        SharedPreferences preferenceSettings;
-        SharedPreferences.Editor preferenceEditor;
-
-        preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
-        preferenceEditor = preferenceSettings.edit();
-        preferenceEditor.putBoolean("registered", false);
-        preferenceEditor.apply();
-
-    }*/
-
+    /**
+     * Contacts the server to check if the participant ID is in the user table. The php file echoes
+     * "true" or "false". The participant ID is taken from SharedPreferences and is "false" if it
+     * has not been set before. The SharedPreference is set after this and the registration activity
+     * and will be cleared if the participant clears the app data.
+     *
+     */
     private class checkRegistration extends AsyncTask<Void, Void, String> {
-        //checks device ID in user file
         @Override
         protected String doInBackground(Void... params) {
             if (!isNetworkConnected()) {
@@ -95,19 +101,17 @@ public class ApplicationStartUp extends Application {
 
             try {
                 //todo also log access here?
+                //todo: why does this check participant ID instead of installation ID?
                 URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/check_registration.php");
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
                 con.setDoOutput(true);
                 con.setChunkedStreamingMode(0);
 
-                //get partID from SharedPreferences and compare to server
-                SharedPreferences preferenceSettings;
-                preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
-                String partID = preferenceSettings.getString("partID", "false");
+                //compare PartID to server
                 if (partID == "false") {
                     return partID;
                 }
-                //check if ID is in user file
+
                 OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
                 out.write("partID="+partID.trim()); //trim whitespace
                 out.close();
@@ -138,7 +142,6 @@ public class ApplicationStartUp extends Application {
             super.onPostExecute(result);
             SharedPreferences preferenceSettings;
             SharedPreferences.Editor preferenceEditor;
-
             preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
             preferenceEditor = preferenceSettings.edit();
             if (result == "true") {
@@ -148,13 +151,12 @@ public class ApplicationStartUp extends Application {
 
         }
 
-
-        /**checks whether the device is connected to an internet network*/
+        /**Checks whether the device is connected to an internet network. Does not necessarily ensure
+         * that the internet is available (for example, if there is a login screen).
+         * @return true if connected to a network, otherwise false*/
         private boolean isNetworkConnected() {
             ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
             return (cm.getActiveNetworkInfo() != null);
         }
     }
-
-
 }

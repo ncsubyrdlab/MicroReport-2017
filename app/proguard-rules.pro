@@ -16,8 +16,9 @@
 #   public *;
 #}
 -dontwarn javax.xml.stream.**
--keep com.ekito.simpleKML.**
 -keep com.google.android.gms.**
 -keep com.google.maps.android.**
 -keep edu.ucsc.psyc_files.microreport.**
--keep org.simpleframework.xml.**
+# Keep all the ACRA classes
+-keep class org.acra.** { *; }
+

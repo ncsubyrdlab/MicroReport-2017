@@ -15,14 +15,14 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-/**Shows campus resources and a short FAQ on the app*/
+/**Shows campus resources and a short FAQ on the app. Also shows the participant's ID number from
+ * SharedPreferences*/
 public class HelpActivity extends Activity {
 
     private SharedPreferences preferenceSettings;
     private ListView nav;
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,9 +35,8 @@ public class HelpActivity extends Activity {
         //show if installation has been registered
         preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
         String partid = preferenceSettings.getString("partID", "Device has not been registered");
-        String email = preferenceSettings.getString("emailAddress","");
-        String settings_text = "Participant ID: "+ partid +
-        "\nParticipant Email: " + email +"\n";
+        //String email = preferenceSettings.getString("emailAddress","");
+        String settings_text = "Participant ID: "+ partid +"\n";
         settings.setText(settings_text);
         settings.setContentDescription(settings_text);
 
@@ -68,6 +67,9 @@ public class HelpActivity extends Activity {
 
     }
 
+    /**
+     * ClickListener for navigation drawer.
+     */
     private class DrawerItemClickListener implements ListView.OnItemClickListener{
         @Override
         public void onItemClick(AdapterView parent, View view, int position, long id) {
@@ -75,6 +77,10 @@ public class HelpActivity extends Activity {
         }
     }
 
+    /**
+     * Takes clicks on navigation drawer and opens appropriate activity. Then closes the drawer.
+     * @param position the position of the item clicked
+     */
     private void selectItem(int position){
         Intent intent;
         switch (position) {
@@ -119,6 +125,7 @@ public class HelpActivity extends Activity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        //passes menu clicks to the navigation drawer instead of action bar
         if (mDrawerToggle.onOptionsItemSelected(item)) {
             return true;
         }

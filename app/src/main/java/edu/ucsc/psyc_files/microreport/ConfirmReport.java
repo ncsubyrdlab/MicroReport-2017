@@ -19,9 +19,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 /**
- * Shows a draft of the report; user can submit the report or go back. This activity has no menu options.
- * //no longer used with reportactivity as dialog
+ * Deprecated. In version 2, ReportActivity submits report directly without confirming.
  */
+@Deprecated
 public class ConfirmReport extends Activity {
 
     private String output;

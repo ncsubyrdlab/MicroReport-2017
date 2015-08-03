@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@android:color/white">
+    android:background="@android:color/white"
+    android:padding="2dp">
     <TextView
         android:id="@+id/marker_description"
         android:layout_marginLeft="5dp"
@@ -20,6 +21,5 @@
             android:layout_height="wrap_content"
             android:textStyle="normal"
             android:textScaleX=".8"/>
-
     </LinearLayout>
 
