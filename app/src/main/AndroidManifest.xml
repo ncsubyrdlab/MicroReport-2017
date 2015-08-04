@@ -82,7 +82,7 @@
                 android:value="edu.ucsc.psyc_files.microreport.MainActivity" />
         </activity>
         <activity
-            android:name=".LoginActivity"
+            android:name=".RegisterActivity"
             android:label="@string/title_activity_login"
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="adjustResize|stateHidden" >

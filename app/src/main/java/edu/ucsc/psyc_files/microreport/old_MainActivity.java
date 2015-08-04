@@ -59,16 +59,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
+@Deprecated
 /**
- * MicroReport 2.0
- * @author Christy M. Byrd, University of California, Santa Cruz, cmbyrd@ucsc.edu
- * Copyright 2015
- * This Android app is used to report microaggressions and display them on a map. Requires Google
- * Play Services and Android 3.0+
- * The Main activity displays a map and a floating action button. The items are stored in myItemCollection,
- * which is added to the map through the ClusterManager (not directly). filteredReports is used to
- * store the user's reports only.
- * Uses Utility Library for marker clustering: https://github.com/googlemaps/android-maps-utils
+ * Original MainActivity from version 1.0 and partly through 2.0. New activity combines MyItem
+ * and Report objects and streamlines downloading of reports, filtering, and sorting.
  *
  */
 public class old_MainActivity extends Activity implements OnMapReadyCallback {
@@ -103,7 +97,7 @@ public class old_MainActivity extends Activity implements OnMapReadyCallback {
             String partID = preferenceSettings.getString("partID", "false");
             if (partID == "false") {
                 //go to registration page
-                Intent intent = new Intent(this, LoginActivity.class);
+                Intent intent = new Intent(this, RegisterActivity.class);
                 startActivity(intent);
                 finish();
             }
@@ -833,7 +827,7 @@ public class old_MainActivity extends Activity implements OnMapReadyCallback {
     }
 
     /**
-     * Constructs the Report object that includes report details
+     * Constructs the Report object that includes report details (this is fromt the new version, the old used TransformReports.Report)
      */
     public static class Report {
         public final String timestamp;

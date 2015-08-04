@@ -26,7 +26,7 @@
     <screenName name="edu.ucsc.psyc_files.microreport.HelpActivity">
         Resources
     </screenName>
-    <screenName name="edu.ucsc.psyc_files.microreport.LoginActivity">
+    <screenName name="edu.ucsc.psyc_files.microreport.RegisterActivity">
         Registration
     </screenName>
     <screenName name="edu.ucsc.psyc_files.microreport.MainActivity">

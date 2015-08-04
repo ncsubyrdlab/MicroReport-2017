@@ -44,6 +44,7 @@ public class ApplicationStartUp extends Application {
     public static GoogleAnalytics analytics;
     public static Tracker tracker;
     String partID;
+    String installationID;
 
     /**
      * Initiates registration check, ACRA and Google Analytics set-up
@@ -52,7 +53,7 @@ public class ApplicationStartUp extends Application {
     public void onCreate() {
         super.onCreate();
         //get participant ID for registration check
-        String installationID = Installation.id(this);
+        installationID = Installation.id(this);
         SharedPreferences preferenceSettings;
         preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
         partID = preferenceSettings.getString("partID", "false");
@@ -101,7 +102,6 @@ public class ApplicationStartUp extends Application {
 
             try {
                 //todo also log access here?
-                //todo: why does this check participant ID instead of installation ID?
                 URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/check_registration.php");
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
                 con.setDoOutput(true);
@@ -113,7 +113,7 @@ public class ApplicationStartUp extends Application {
                 }
 
                 OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
-                out.write("partID="+partID.trim()); //trim whitespace
+                out.write("partID="+partID.trim()+"&installationID="+installationID); //trim whitespace
                 out.close();
 
                 if (con.getResponseCode() == 200) {

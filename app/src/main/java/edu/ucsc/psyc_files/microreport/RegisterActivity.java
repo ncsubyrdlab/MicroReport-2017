@@ -51,7 +51,7 @@ import java.util.List;
  * not registered.
  * Based on Login Activity template.
  */
-public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
+public class RegisterActivity extends Activity implements LoaderCallbacks<Cursor> {
 
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
@@ -327,7 +327,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
      */
     private void addEmailsToAutoComplete(List<String> emailAddressCollection) {
         ArrayAdapter<String> adapter =
-                new ArrayAdapter<String>(LoginActivity.this,
+                new ArrayAdapter<String>(RegisterActivity.this,
                         android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
 
         mEmailView.setAdapter(adapter);
@@ -446,6 +446,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                     preferenceEditor.putString("emailAddress", mEmail);
                     preferenceEditor.apply();
                     ACRA.getErrorReporter().putCustomData("partID", partID);
+                    ACRA.getErrorReporter().putCustomData("installationID", Installation.id(getBaseContext()));
 
                 } else if (result.contains("This device is already registered")) {
                     //set shared preferences and show finish button

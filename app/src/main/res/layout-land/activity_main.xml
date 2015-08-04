@@ -4,86 +4,85 @@
     android:layout_width="match_parent"
     android:id="@+id/drawer_layout"
     >
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/home"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="horizontal"
-
-    android:baselineAligned="false">
-    <RelativeLayout
-        android:layout_width="0dp"
-        android:layout_weight=".5"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        style="@style/UCSCBlue">
-    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@+id/map"
-        android:name="com.google.android.gms.maps.MapFragment"
-        android:layout_height="match_parent"
-        android:layout_width="match_parent"/>
-    <!--floating action button from http://xmodulo.com/implement-floating-action-button-android-apps.html-->
-    <ImageButton
-        android:id="@+id/fab_image_button"
-        android:contentDescription="@string/action_report"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="16dp"
-        android:layout_marginRight="16dp"
-        android:background="@drawable/fab_shape"
-        android:src="@drawable/ic_add_white_48dp"
-        android:tint="@android:color/white"
-        android:onClick="newReport"/>
-    </RelativeLayout>
-    <LinearLayout
-        android:layout_width="0dp"
-        android:layout_weight=".50"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="?android:attr/actionBarSize"
-            android:orientation="horizontal">
-    <ImageButton android:id="@+id/sort_A" android:src="@drawable/ic_action_collapse"
-        android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:contentDescription="@string/sort_A" android:onClick="sortAscending"
-        android:paddingLeft="8dp" android:paddingRight="8dp"
-        />
-    <ImageButton android:id="@+id/sort_D" android:src="@drawable/ic_action_expand"
-        android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:contentDescription="@string/sort_D" android:onClick="sortDescending"
-        android:paddingLeft="8dp" android:paddingRight="8dp"
-         />
-    <ToggleButton android:id="@+id/my_reports" android:src="@drawable/ic_action_user"
-        android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:contentDescription="@string/my_reports" android:onClick="viewMyReports"
-        android:textOn="My"
-        android:textOff="All"/>
-
-            <TextView android:layout_width="wrap_content"
-                android:layout_height="wrap_content" style="@android:style/TextAppearance.Small"
-                android:text="@string/my_reports"
-                android:contentDescription="@string/my_reports"/>
-            </LinearLayout>
-    <ListView
-        android:id="@+id/reports"
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/home"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:choiceMode="singleChoice"/>
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_weight=".5"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            style="@style/UCSCBlue">
+            <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+                android:id="@+id/map"
+                android:name="com.google.android.gms.maps.MapFragment"
+                android:layout_height="match_parent"
+                android:layout_width="match_parent"/>
+            <!--floating action button from http://xmodulo.com/implement-floating-action-button-android-apps.html-->
+            <ImageButton
+                android:id="@+id/fab_image_button"
+                android:contentDescription="@string/action_report"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginBottom="16dp"
+                android:layout_marginRight="16dp"
+                android:background="@drawable/fab_shape"
+                android:src="@drawable/ic_add_white_48dp"
+                android:tint="@android:color/white"
+                android:onClick="newReport"/>
+        </RelativeLayout>
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_weight=".50"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingTop="?android:attr/actionBarSize">
+            <ImageButton android:id="@+id/sort_A" android:src="@drawable/ic_action_collapse"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:contentDescription="@string/sort_A" android:onClick="sortAscending"
+                android:paddingLeft="8dp" android:paddingRight="8dp"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentTop="true"
+                />
+            <ImageButton android:id="@+id/sort_D" android:src="@drawable/ic_action_expand"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:contentDescription="@string/sort_D" android:onClick="sortDescending"
+                android:paddingLeft="8dp" android:paddingRight="8dp"
+                android:layout_toRightOf="@id/sort_A"
+                />
+            <ToggleButton android:id="@+id/my_reports"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:contentDescription="@string/my_reports" android:onClick="viewMyReports"
+                android:textOn="My"
+                android:textOff="All" android:layout_toRightOf="@id/sort_D"/>
+            <TextView android:layout_width="wrap_content"
+                android:layout_height="wrap_content" style="@android:style/TextAppearance.Small"
+                android:text="@string/my_reports" android:layout_toRightOf="@id/my_reports"
+                android:contentDescription="@string/my_reports"/>
+            <ListView
+                android:id="@+id/reports"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:choiceMode="singleChoice"
+                android:layout_alignParentBottom="true"
+                android:layout_below="@id/sort_A"/>
+        </RelativeLayout>
     </LinearLayout>
-</LinearLayout>
-<ListView
-android:id="@+id/navigation_drawer"
-android:layout_width="240dp"
-android:layout_height="match_parent"
-android:layout_gravity="start"
-android:choiceMode="singleChoice"
-android:divider="@android:color/transparent"
-android:dividerHeight="0dp"
-android:background="@android:color/white"
-    android:paddingTop="?android:attr/actionBarSize"
-    ></ListView>
+    <ListView
+        android:id="@+id/navigation_drawer"
+        android:layout_width="240dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:choiceMode="singleChoice"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="0dp"
+        android:background="@android:color/white"
+        android:paddingTop="?android:attr/actionBarSize"
+        ></ListView>
     </android.support.v4.widget.DrawerLayout>

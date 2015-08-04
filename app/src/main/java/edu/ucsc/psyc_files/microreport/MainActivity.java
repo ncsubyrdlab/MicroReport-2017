@@ -23,6 +23,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -44,10 +45,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 
 /**
@@ -65,19 +69,20 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
 
     private static MapFragment mMapFragment;  //Google map fragment
     private static ClusterManager<Report> mClusterManager;  //Handles rendering of markers at different zoom levels
-    private ArrayAdapter<Report> adapter;   //handles the list of reports in landscape mode
+    private ReportAdapter adapter;   //handles the list of reports in landscape mode
     private DefaultClusterRenderer<Report> clusterRenderer; //my implementation of Google utility library cluster renderer
     private ListView nav;
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
     private ArrayList<Report> reports;
-
+    private String partID;
 
     /**
-     * First checks if the device is registered using SharedPreferences. If not, redirects to
-     * Registration page. Currently downloads reports from xml file into cache and uses {@TransformReports}
-     * object to parse into Reports objects.
      * Opens the main page and displays the reports on a map in clusters based on zoom level.
+     * First checks if the device is registered using SharedPreferences. If not, redirects to
+     * Registration page. Connects to php file which echoes reports, which are put into an ArrayList.
+     * The list is then displayed in the list adapter (landscape view) and the cluster manager
+     * to show the map markers.
      * @param savedInstanceState The map clusters are saved in an array on orientation changes
      */
     @Override
@@ -88,10 +93,10 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             //check registration status
             SharedPreferences preferenceSettings;
             preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
-            String partID = preferenceSettings.getString("partID", "false");
+            partID = preferenceSettings.getString("partID", "false");
             if (partID == "false") {
                 //go to registration page
-                Intent intent = new Intent(this, LoginActivity.class);
+                Intent intent = new Intent(this, RegisterActivity.class);
                 startActivity(intent);
                 finish();
             }
@@ -101,7 +106,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                 setUpMap();
             }
             else {
-                //otherwise download reports
+                //otherwise download reports (calls setUpMap)
                 //todo: check age of file
                 new getReports().execute();
             }
@@ -205,7 +210,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         //fill listview with reports from array using custom adapter (only visible in landscape mode)
         if (findViewById(R.id.reports) != null) {
             ListView list = (ListView) findViewById(R.id.reports);
-            adapter = new ItemAdapter(this, reports);
+            adapter = new ReportAdapter(this, reports);
             list.setAdapter(adapter);
             list.setOnItemClickListener(mItemClickedHandler);
         }
@@ -228,7 +233,6 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     protected void onResume() {
         super.onResume();
     }
-
 
     /**creates the menu*/
     @Override
@@ -297,7 +301,6 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
      */
     public void updateMap() {
          Toast.makeText(this, "Updating map...", Toast.LENGTH_SHORT).show();
-        //todo: this creates a "file not found error" but changing orientation is OK
         /**File cacheDir = getCacheDir();
          File[] files = cacheDir.listFiles();
          if (files != null) {
@@ -323,7 +326,6 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         @Override
         protected void onBeforeClusterItemRendered(Report item, MarkerOptions markerOptions) {
             super.onBeforeClusterItemRendered(item, markerOptions);
-            //todo: make this to readable timestamp
             markerOptions.title(item.getTimestamp());
             markerOptions.snippet(item.getDescription());
             if (item.isUser_report()){
@@ -385,14 +387,21 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
      * Uses a cache for performance
      * https://github.com/codepath/android_guides/wiki/Using-an-ArrayAdapter-with-ListView
      */
-    public class ItemAdapter extends ArrayAdapter<Report> {
+    public class ReportAdapter extends ArrayAdapter<Report> {
+        private ArrayList<Report> list;
+
+        public ReportAdapter(Context context, ArrayList<Report> list) {
+            super(context, 0, list);
+            this.list = list;
+        }
+
+        public ArrayList<Report> getList() {
+            return list;
+        }
+
         private class ViewHolder {
             TextView markerTitle;
             TextView markerDescription;
-        }
-
-        public ItemAdapter(Context context, ArrayList<Report> list) {
-            super(context, 0, list);
         }
 
         @Override
@@ -438,8 +447,25 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
      * Shows the reports in the list view in ascending order
      * @param view
      */
-    public void sortAscending(View view){
 
+    public void sortAscending(View view){
+        //get list currently in listview
+        ArrayList list = adapter.getList();
+        //sort by timestamp
+         Collections.sort(list, new Comparator<Report>() {
+                public int compare(Report report1, Report report2) {
+                    Long date1, date2;
+                    try {
+                        date1 = Long.parseLong(report1.getRawTimetamp());
+                        date2 = Long.parseLong(report2.getRawTimetamp());
+                    } catch (NumberFormatException ex) {
+                        date1 = (long) 0;
+                        date2 = (long) 0;
+                    }
+                    return (date1 < date2 ? -1 : date1 > date2 ? 1 : 0);
+                }
+            });
+        adapter.notifyDataSetChanged();
     }
 
     /**
@@ -447,6 +473,23 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
      * @param view
      */
     public void sortDescending(View view) {
+        //get list currently in listview
+        ArrayList list = adapter.getList();
+        //sort by timestamp
+        Collections.sort(list, new Comparator<Report>() {
+            public int compare(Report report1, Report report2) {
+                Long date1, date2;
+                try {
+                    date1 = Long.parseLong(report1.getRawTimetamp());
+                    date2 = Long.parseLong(report2.getRawTimetamp());
+                } catch (NumberFormatException ex) {
+                    date1 = (long) 0;
+                    date2 = (long) 0;
+                }
+                return (date1 > date2 ? -1 : date1 < date2 ? 1 : 0);
+            }
+        });
+        adapter.notifyDataSetChanged();
 
     }
 
@@ -455,7 +498,26 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
      * @param view
      */
     public void viewMyReports (View view){
-
+        //adapter.clear();
+        ListView list = (ListView) findViewById(R.id.reports);
+        boolean on = ((ToggleButton) view).isChecked();
+        if (on) {
+            //copy reports into separate list
+            ArrayList<Report> new_list = new ArrayList<Report>();
+            //pull out list of user's reports
+            for (Report i : reports) {
+                if (i.isUser_report()) {
+                    new_list.add(i);
+                }
+            }
+            adapter = new ReportAdapter(this, new_list);
+            list.setAdapter(adapter);
+            adapter.notifyDataSetChanged();
+        } else {
+            adapter = new ReportAdapter(this, reports);
+            list.setAdapter(adapter);
+            adapter.notifyDataSetChanged();
+        }
     }
 
     @Override
@@ -469,22 +531,22 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         mDrawerToggle.onConfigurationChanged(newConfig);
     }
 
-    private class getReports extends AsyncTask<Void, Void, ArrayList<Report>> {
+    private class getReports extends AsyncTask<String, Void, ArrayList<Report>> {
         @Override
-        protected ArrayList<Report> doInBackground(Void... params) {
+        protected ArrayList<Report> doInBackground(String... params) {
             if (!isNetworkConnected()) {
                 //cancel if network is not connected
                 return null;
             }
-            //ArrayList<Report> reports = new ArrayList<Report>();
             try {
                 URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/getreports.php");
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                /**con.setDoOutput(true);
+                con.setDoOutput(true);
                 con.setChunkedStreamingMode(0);
                 OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
-                out.write("search_field=*&search_term=*&sort_field=timestamp");
-                out.close();*/
+                out.write("partID="+partID+"&installationID="+Installation.id(getBaseContext()));
+                //out.write("partID="+partID+"&installationID="+Installation.id(getBaseContext())+"&search_field="+params[0]+"&search_term="+params[1]+"&sort_field="+params[2]);
+                out.close();
 
                 if (con.getResponseCode() == 200) {
                     reports = parseReports(con.getInputStream());
@@ -521,6 +583,11 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         String[] result;
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
         String line = br.readLine();
+        //check that the input is actually something
+        if (line.contains("Error: ")) {
+            reports.add(new Report(new Date().toString(), "Error", "There was an error: "+line, "36.991386", "-122.060872", false));
+            return reports;
+        }
         do {    //take each line and read parts into report object
             result = line.split("%delim%",5);
             reports.add(new Report(result[0], result[1], result[2], result[3], result[4], result[4].equals(partID)));
@@ -541,9 +608,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         public final boolean user_report;
 
         public Report(String timestamp, String description, String locationLat, String locationLong, String partID, boolean user_report) {
-            SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm a zzz");
-            Date time = new Date(Long.parseLong(timestamp)*1000);   //convert seconds to milliseconds
-            this.timestamp = sdf.format(time);
+            this.timestamp = timestamp;
             this.description = description;
             this.locationLat = locationLat;
             this.locationLong = locationLong;
@@ -568,6 +633,12 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         }
 
         public String getTimestamp() {
+            SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm a zzz");
+            Date time = new Date(Long.parseLong(timestamp)*1000);   //convert seconds to milliseconds
+            return sdf.format(time);
+        }
+
+        public String getRawTimetamp() {
             return timestamp;
         }
 
