@@ -33,9 +33,11 @@ import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterItem;
 import com.google.maps.android.clustering.ClusterManager;
 import com.google.maps.android.clustering.view.DefaultClusterRenderer;
@@ -68,7 +70,7 @@ import java.util.Date;
 public class MainActivity extends Activity implements OnMapReadyCallback {
 
     private static MapFragment mMapFragment;  //Google map fragment
-    private static ClusterManager<Report> mClusterManager;  //Handles rendering of markers at different zoom levels
+    private static MyClusterManager<Report> mClusterManager;  //Handles rendering of markers at different zoom levels
     private ReportAdapter adapter;   //handles the list of reports in landscape mode
     private DefaultClusterRenderer<Report> clusterRenderer; //my implementation of Google utility library cluster renderer
     private ListView nav;
@@ -100,10 +102,14 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                 startActivity(intent);
                 finish();
             }
+            enableHttpResponseCache();
             //if just an orientation change or no network connection, don't download reports again
             if (savedInstanceState != null)  {
                 reports = savedInstanceState.getParcelableArrayList("reports");
+                CameraPosition position = savedInstanceState.getParcelable("position");
                 setUpMap();
+                //todo: preserve camera position on orientation changes
+                //mMapFragment.getMap().moveCamera(CameraUpdateFactory.newCameraPosition(position));
             }
             else {
                 //otherwise download reports (calls setUpMap)
@@ -198,7 +204,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         mMap.setInfoWindowAdapter(new MyInfoWindow());  //uses my version of info window
 
         // Initialize the cluster manager and renderer and set up listeners
-        mClusterManager = new ClusterManager<Report>(this, mMap);
+        mClusterManager = new MyClusterManager<Report>(this, mMap);
         clusterRenderer = new MyClusterRenderer(this, mMap, mClusterManager);
         mClusterManager.setRenderer(clusterRenderer);
         mMap.setOnCameraChangeListener(mClusterManager);
@@ -226,6 +232,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putParcelableArrayList("reports",reports);
+        outState.putParcelable("position", mMapFragment.getMap().getCameraPosition());
         super.onSaveInstanceState(outState);
     }
 
@@ -313,14 +320,51 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         finish();
     }
 
+    static class MyClusterManager<Report> extends ClusterManager {
+        private GoogleMap mMap;
+        float compareZoom;
+        final float maxZoom;
+
+        public MyClusterManager(Context context, GoogleMap map) {
+            super(context, map);
+            mMap = map;
+            maxZoom = mMap.getMaxZoomLevel();
+        }
+
+        @Override
+        public void onCameraChange(CameraPosition cameraPosition) {
+            float zoom = cameraPosition.zoom;
+            compareZoom = maxZoom - zoom;
+            super.onCameraChange(cameraPosition);
+        }
+    }
+
     /**My own version of cluster renderer (from clustering utility library)
      * shows info window with title and snippet, and blue markers (slightly darker blue for user's
      * reports. */
      static class MyClusterRenderer extends DefaultClusterRenderer<Report> {
+        private static final int MIN_CLUSTER_SIZE = 4;
+        private MyClusterManager clusterManager;
 
         public MyClusterRenderer(Context context, GoogleMap map,
-                                 ClusterManager<Report> clusterManager) {
+                                 MyClusterManager<Report> clusterManager) {
             super(context, map, clusterManager);
+            this.clusterManager = clusterManager;
+        }
+
+        /**
+         * Shows whether markers should cluster. Have to be more than 4 markers and not at the maximum
+         * zoom level
+         * @param cluster
+         * @return
+         */
+        @Override
+        protected boolean shouldRenderAsCluster(Cluster<Report> cluster) {
+
+            if (clusterManager.compareZoom == 0 ) {
+                return false;
+            }
+            return cluster.getSize() > MIN_CLUSTER_SIZE;
         }
 
         @Override
@@ -342,24 +386,24 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
 
         @Override
         public View getInfoContents(Marker marker) {
-            if (marker.getTitle()!= null) { //don't show infowindow for clusters
+            //show marker info window
             View v = getLayoutInflater().inflate(R.layout.infowindow_layout, null);
-            TextView markerTitle = (TextView)v.findViewById(R.id.marker_title);
-            TextView markerDescription = (TextView)v.findViewById(R.id.marker_description);
+            TextView markerTitle = (TextView) v.findViewById(R.id.marker_title);
+            TextView markerDescription = (TextView) v.findViewById(R.id.marker_description);
             markerTitle.setText(marker.getTitle());
             markerDescription.setText(marker.getSnippet());
-            v.setContentDescription(marker.getSnippet()+marker.getTitle());
-
-            //highlight item in listview based on whether filtered (landscape only)
-            if (findViewById(R.id.reports) != null) {
+            v.setContentDescription(marker.getSnippet() + marker.getTitle());
+            //don't show info window for clusters in portrait view
+            if (findViewById(R.id.reports) == null && marker.getTitle() == null) {
+                return null;
+            }
+            if (findViewById(R.id.reports) != null) {   //landscape view always show info window
+                //highlight item in listview based on whether filtered (landscape only)
                 Report item = clusterRenderer.getClusterItem(marker);
                 ListView list = (ListView) findViewById(R.id.reports);
                 list.setSelection(reports.indexOf(item));
-
-               }
+            }
             return v;
-        }
-            return null;
         }
 
         public View getInfoWindow(Marker marker){
@@ -456,8 +500,8 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
                 public int compare(Report report1, Report report2) {
                     Long date1, date2;
                     try {
-                        date1 = Long.parseLong(report1.getRawTimetamp());
-                        date2 = Long.parseLong(report2.getRawTimetamp());
+                        date1 = Long.parseLong(report1.getRawTimestamp());
+                        date2 = Long.parseLong(report2.getRawTimestamp());
                     } catch (NumberFormatException ex) {
                         date1 = (long) 0;
                         date2 = (long) 0;
@@ -480,8 +524,8 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             public int compare(Report report1, Report report2) {
                 Long date1, date2;
                 try {
-                    date1 = Long.parseLong(report1.getRawTimetamp());
-                    date2 = Long.parseLong(report2.getRawTimetamp());
+                    date1 = Long.parseLong(report1.getRawTimestamp());
+                    date2 = Long.parseLong(report2.getRawTimestamp());
                 } catch (NumberFormatException ex) {
                     date1 = (long) 0;
                     date2 = (long) 0;
@@ -498,7 +542,6 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
      * @param view
      */
     public void viewMyReports (View view){
-        //adapter.clear();
         ListView list = (ListView) findViewById(R.id.reports);
         boolean on = ((ToggleButton) view).isChecked();
         if (on) {
@@ -634,11 +677,16 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
 
         public String getTimestamp() {
             SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm a zzz");
-            Date time = new Date(Long.parseLong(timestamp)*1000);   //convert seconds to milliseconds
+            Date time;
+            try {
+                time = new Date(Long.parseLong(timestamp) * 1000);   //convert seconds to milliseconds
+            } catch (NumberFormatException ex) {
+                time = new Date();
+            }
             return sdf.format(time);
         }
 
-        public String getRawTimetamp() {
+        public String getRawTimestamp() {
             return timestamp;
         }
 
@@ -658,7 +706,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
          */
         @Override
         public void writeToParcel(Parcel out, int flags) {
-            out.writeString(getTimestamp());
+            out.writeString(getRawTimestamp());
             out.writeString(getDescription());
             out.writeString(getLocationLat());
             out.writeString(getLocationLong());

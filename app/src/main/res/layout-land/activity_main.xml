@@ -71,7 +71,8 @@
                 android:layout_height="wrap_content"
                 android:choiceMode="singleChoice"
                 android:layout_alignParentBottom="true"
-                android:layout_below="@id/sort_A"/>
+                android:layout_below="@id/sort_A"
+                />
         </RelativeLayout>
     </LinearLayout>
     <ListView
