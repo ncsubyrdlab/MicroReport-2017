@@ -78,6 +78,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
     private ActionBarDrawerToggle mDrawerToggle;
     private ArrayList<Report> reports;
     private String partID;
+    private CameraPosition position;
 
     /**
      * Opens the main page and displays the reports on a map in clusters based on zoom level.
@@ -106,7 +107,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             //if just an orientation change or no network connection, don't download reports again
             if (savedInstanceState != null)  {
                 reports = savedInstanceState.getParcelableArrayList("reports");
-                CameraPosition position = savedInstanceState.getParcelable("position");
+                position = savedInstanceState.getParcelable("position");
                 setUpMap();
                 //todo: preserve camera position on orientation changes
                 //mMapFragment.getMap().moveCamera(CameraUpdateFactory.newCameraPosition(position));
@@ -114,6 +115,8 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             else {
                 //otherwise download reports (calls setUpMap)
                 //todo: check age of file
+                //move map to center of campus
+                position = new CameraPosition(new LatLng(36.991386, -122.060872), 14, 0, 0);
                 new getReports().execute();
             }
         } else {    //end if network is connected
@@ -200,7 +203,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         mMap.setMyLocationEnabled(true); //shows user location
         UiSettings settings = mMap.getUiSettings();
         settings.setMapToolbarEnabled(false);  //doesn't show toolbar that links to Google Maps app
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(36.991386, -122.060872), 14)); //moves camera to campus center
+        mMap.moveCamera(CameraUpdateFactory.newCameraPosition(position)); //moves camera to campus center
         mMap.setInfoWindowAdapter(new MyInfoWindow());  //uses my version of info window
 
         // Initialize the cluster manager and renderer and set up listeners
