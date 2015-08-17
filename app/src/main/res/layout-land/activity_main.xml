@@ -56,15 +56,15 @@
                 android:paddingLeft="8dp" android:paddingRight="8dp"
                 android:layout_toRightOf="@id/sort_A"
                 />
-            <ToggleButton android:id="@+id/my_reports"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:contentDescription="@string/my_reports" android:onClick="viewMyReports"
-                android:textOn="My"
-                android:textOff="All" android:layout_toRightOf="@id/sort_D"/>
-            <TextView android:layout_width="wrap_content"
-                android:layout_height="wrap_content" style="@android:style/TextAppearance.Small"
-                android:text="@string/my_reports" android:layout_toRightOf="@id/my_reports"
-                android:contentDescription="@string/my_reports"/>
+            <Spinner
+                android:id="@+id/filter_spinner"
+                android:entries="@array/filter_options"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                style="@android:style/TextAppearance.Small"
+                android:layout_marginBottom="12dp"
+                android:layout_toRightOf="@id/sort_D"
+                />
             <ListView
                 android:id="@+id/reports"
                 android:layout_width="match_parent"

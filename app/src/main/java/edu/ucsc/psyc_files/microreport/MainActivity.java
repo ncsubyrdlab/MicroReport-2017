@@ -21,9 +21,9 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -67,7 +67,7 @@ import java.util.Date;
  * Uses Utility Library for marker clustering: https://github.com/googlemaps/android-maps-utils
  *
  */
-public class MainActivity extends Activity implements OnMapReadyCallback {
+public class MainActivity extends Activity implements OnMapReadyCallback, AdapterView.OnItemSelectedListener {
 
     private static MapFragment mMapFragment;  //Google map fragment
     private static MyClusterManager<Report> mClusterManager;  //Handles rendering of markers at different zoom levels
@@ -106,8 +106,13 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             enableHttpResponseCache();
             //if just an orientation change or no network connection, don't download reports again
             if (savedInstanceState != null)  {
-                reports = savedInstanceState.getParcelableArrayList("reports");
-                position = savedInstanceState.getParcelable("position");
+                try {
+                    reports = savedInstanceState.getParcelableArrayList("reports");
+                    position = savedInstanceState.getParcelable("position");
+                }
+                catch (NullPointerException ex) {
+                    position = new CameraPosition(new LatLng(36.991386, -122.060872), 14, 0, 0);
+                }
                 setUpMap();
                 //todo: preserve camera position on orientation changes
                 //mMapFragment.getMap().moveCamera(CameraUpdateFactory.newCameraPosition(position));
@@ -121,6 +126,17 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             }
         } else {    //end if network is connected
             Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
+        }
+
+        //filter
+        //populate spinner
+        if (findViewById(R.id.reports) != null) {
+            Spinner spinner = (Spinner) findViewById(R.id.filter_spinner);
+            ArrayAdapter<CharSequence> spinnerArrayAdapter = ArrayAdapter.createFromResource(this, R.array.filter_options, android.R.layout.simple_spinner_item);
+                    //this, android.R.layout.simple_spinner_item, R.array.filter_options);
+            spinnerArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinner.setAdapter(spinnerArrayAdapter);
+            spinner.setOnItemSelectedListener(this);
         }
 
         //navigation drawer
@@ -148,6 +164,77 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         getActionBar().setHomeButtonEnabled(true);
 
     }
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        ListView list = (ListView) findViewById(R.id.reports);
+        ArrayList<Report> new_list = new ArrayList<Report>();
+        //filter reports
+
+        switch (position) {
+            case 1: //race
+                for (Report i : reports) {
+                    if (i.isRace()) {
+                        new_list.add(i);
+                    }
+                }
+                adapter = new ReportAdapter(this, new_list);
+                break;
+            case 2: //culture
+                for (Report i : reports) {
+                    if (i.isCulture()) {
+                        new_list.add(i);
+                    }
+                }
+                adapter = new ReportAdapter(this, new_list);
+                break;
+            case 3: //gender
+                for (Report i : reports) {
+                    if (i.isGender()) {
+                        new_list.add(i);
+                    }
+                }
+                adapter = new ReportAdapter(this, new_list);
+                break;
+            case 4: //sexual orientaiton
+                for (Report i : reports) {
+                    if (i.isSex()) {
+                        new_list.add(i);
+                    }
+                }
+                adapter = new ReportAdapter(this, new_list);
+                break;
+            case 5: //other
+                for (Report i : reports) {
+                    if (i.isOther()) {
+                        new_list.add(i);
+                    }
+                }
+                adapter = new ReportAdapter(this, new_list);
+                break;
+            case 6: //my reports
+                for (Report i : reports) {
+                    if (i.isUser_report()) {
+                        new_list.add(i);
+                    }
+                }
+                adapter = new ReportAdapter(this, new_list);
+                break;
+            default:
+                adapter = new ReportAdapter(this, reports);
+                break;
+
+        }
+
+        list.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+
+    }
+
     /**
      * ClickListener for navigation drawer.
      */
@@ -213,15 +300,20 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         mMap.setOnCameraChangeListener(mClusterManager);
         mMap.setOnMarkerClickListener(mClusterManager);
 
-        mClusterManager.addItems(reports);
-        mClusterManager.cluster();
+        try {
+            mClusterManager.addItems(reports);
+            mClusterManager.cluster();
 
-        //fill listview with reports from array using custom adapter (only visible in landscape mode)
-        if (findViewById(R.id.reports) != null) {
-            ListView list = (ListView) findViewById(R.id.reports);
-            adapter = new ReportAdapter(this, reports);
-            list.setAdapter(adapter);
-            list.setOnItemClickListener(mItemClickedHandler);
+            //fill listview with reports from array using custom adapter (only visible in landscape mode)
+            if (findViewById(R.id.reports) != null) {
+                ListView list = (ListView) findViewById(R.id.reports);
+                adapter = new ReportAdapter(this, reports);
+                list.setAdapter(adapter);
+                list.setOnItemClickListener(mItemClickedHandler);
+            }
+        }
+        catch (NullPointerException ex) {
+            //don't show anything
         }
     }
 
@@ -540,31 +632,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
 
     }
 
-    /**
-     * Displays only the user's reports in the listview
-     * @param view
-     */
-    public void viewMyReports (View view){
-        ListView list = (ListView) findViewById(R.id.reports);
-        boolean on = ((ToggleButton) view).isChecked();
-        if (on) {
-            //copy reports into separate list
-            ArrayList<Report> new_list = new ArrayList<Report>();
-            //pull out list of user's reports
-            for (Report i : reports) {
-                if (i.isUser_report()) {
-                    new_list.add(i);
-                }
-            }
-            adapter = new ReportAdapter(this, new_list);
-            list.setAdapter(adapter);
-            adapter.notifyDataSetChanged();
-        } else {
-            adapter = new ReportAdapter(this, reports);
-            list.setAdapter(adapter);
-            adapter.notifyDataSetChanged();
-        }
-    }
+
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
@@ -622,7 +690,6 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
      */
     private ArrayList<Report> parseReports(InputStream in) throws IOException {
         ArrayList<Report> reports = new ArrayList<Report>();
-        //Report(String description, long locationLat, long locationLong, String partID, Date timestamp, boolean user_report) {
         SharedPreferences preferenceSettings;
         preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
         String partID = preferenceSettings.getString("partID", "none");
@@ -631,14 +698,22 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         String line = br.readLine();
         //check that the input is actually something
         if (line.contains("Error: ")) {
-            reports.add(new Report(new Date().toString(), "Error", "There was an error: "+line, "36.991386", "-122.060872", false));
+            reports.add(new Report(new Date().toString(), "Error"+line, "36.991386", "-122.060872", null, false,
+                    false, false, false, false, false));
             return reports;
         }
-        do {    //take each line and read parts into report object
-            result = line.split("%delim%",5);
-            reports.add(new Report(result[0], result[1], result[2], result[3], result[4], result[4].equals(partID)));
+        try {
+            do {    //take each line and read parts into report object
+                result = line.split("%delim%", 10);
+                reports.add(new Report(result[0], result[1], result[2], result[3], result[4], result[4].equals(partID),
+                        Boolean.parseBoolean(result[5]), Boolean.parseBoolean(result[6]), Boolean.parseBoolean(result[7]),
+                        Boolean.parseBoolean(result[8]), Boolean.parseBoolean(result[9])));
+                line = br.readLine();
+            } while (!line.equals(""));
+        }
+        catch (ArrayIndexOutOfBoundsException ex) { //not sure why this was necessary, it was fine before!
             line = br.readLine();
-        } while (line != null);
+        }
         return reports;
     }
 
@@ -652,14 +727,26 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
         public final String locationLong;
         public final String partID;
         public final boolean user_report;
+        public final boolean race;
+        public final boolean culture;
+        public final boolean gender;
+        public final boolean sex;
+        public final boolean other;
 
-        public Report(String timestamp, String description, String locationLat, String locationLong, String partID, boolean user_report) {
+
+        public Report(String timestamp, String description, String locationLat, String locationLong, String partID, boolean user_report,
+                      boolean race, boolean culture, boolean gender, boolean sex, boolean other) {
             this.timestamp = timestamp;
             this.description = description;
             this.locationLat = locationLat;
             this.locationLong = locationLong;
             this.partID = partID;
             this.user_report = user_report;
+            this.race = race;
+            this.culture = culture;
+            this.gender = gender;
+            this.sex = sex;
+            this.other = other;
         }
 
         public String getDescription() {
@@ -697,6 +784,26 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             return user_report;
         }
 
+        public boolean isRace() {
+            return race;
+        }
+
+        public boolean isCulture() {
+            return culture;
+        }
+
+        public boolean isGender() {
+            return gender;
+        }
+
+        public boolean isOther() {
+            return other;
+        }
+
+        public boolean isSex() {
+            return sex;
+        }
+
         @Override
         public int describeContents() {
             return 0;
@@ -715,6 +822,11 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
             out.writeString(getLocationLong());
             out.writeString(getPartID());
             out.writeString(String.valueOf(isUser_report()));
+            out.writeString(String.valueOf(isRace()));
+            out.writeString(String.valueOf(isCulture()));
+            out.writeString(String.valueOf(isGender()));
+            out.writeString(String.valueOf(isSex()));
+            out.writeString(String.valueOf(isOther()));
         }
 
         @Override
@@ -735,13 +847,17 @@ public class MainActivity extends Activity implements OnMapReadyCallback {
          */
         public static final Parcelable.Creator<Report> CREATOR = new Parcelable.Creator<Report>() {
             public Report createFromParcel(Parcel in) {
-                return new Report(in.readString(), in.readString(), in.readString(), in.readString(), in.readString(), Boolean.parseBoolean(in.readString()));
+                return new Report(in.readString(), in.readString(), in.readString(), in.readString(), in.readString(), Boolean.parseBoolean(in.readString()),
+                        Boolean.parseBoolean(in.readString()),Boolean.parseBoolean(in.readString()),Boolean.parseBoolean(in.readString()),Boolean.parseBoolean(in.readString()),Boolean.parseBoolean(in.readString()));
+
             }
 
             public Report[] newArray(int size) {
                 return new Report[size];
             }
         };
+
+
     }
 
 

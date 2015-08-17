@@ -56,6 +56,15 @@
     <string name="gender">gender</string>
     <string name="sexual_orientation">sexual orientation</string>
     <string name="something_else">something else</string>
+    <string-array name ="filter_options">
+        <item>Filter</item>
+        <item>Race</item>
+        <item>Culture</item>
+        <item>Gender</item>
+        <item>Sexual Orientation</item>
+        <item>Other</item>
+        <item>My Reports</item>
+    </string-array>
 
     <!--Confirm report popup -->
     <string name="title_activity_confirm_report">Confirm Report</string>
@@ -69,7 +78,7 @@
     <string name="resources">
         <h1><b>Resources</b></h1>
         \n\n<i><b>In an emergency, or if you see a crime in progress, call 911.</b></i>
-        \n\nThis app is designed to aid in reporting microaggressions as an educational and supportive resource. If you would like a response from authorities about an incident, go to http://reportHate.ucsc.edu and submit a hate/bias report.
+        \n\nThis app is designed to aid in reporting microaggressions as an educational and supportive resource. If you would like a response from authorities about an incident, go to http://reporthate.ucsc.edu and submit a hate/bias report.
         \n\n<b>Police Non-Emergency</b> (831) 459-2231
         \n<b>Anonymous Tip Line</b> (831) 459-3TIP
     \n<b>Counseling and Psychological Services</b> (831) 459-2628
@@ -89,7 +98,7 @@
 \nThe first time you open MicroReport after installing or re-installing it, you will be asked to register your device. Your name and email address are required. This information is stored on a password-protected server that only the research team has access to. Reports are displayed with no identifying information. If you are re-installing the app, you should use the same email address and select \"Register New Device\" when prompted.
 \n\n<b>Home</b>
 \nThe home screen displays the map of microaggressions in your community. You can zoom in and out using pinch gestures and pan using swipes to see different parts of the map. A large number of reports in one area will cluster if you zoom out.
-\n\nClick on a marker  to read the report from that location. In landscape view, you can see a list of all the reports and click on an item to pan to that marker on the map.
+\n\nClick on a marker  to read the report from that location. In landscape view, you can see a list of all the reports and click on an item to pan to that marker on the map. You can also filter the reports.
 \n\nTap the refresh icon  to update the map at any time.
 \n\nClick the New Report button  to submit a microaggression report.
 \n\n<b>Submitting a Report</b>
