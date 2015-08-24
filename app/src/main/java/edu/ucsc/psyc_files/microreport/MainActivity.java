@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -320,14 +321,24 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
     /**checks whether the device is connected to an internet network*/
     private boolean isNetworkConnected() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        return (cm.getActiveNetworkInfo() != null);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null &&
+                activeNetwork.isConnected();
+        return (isConnected);
     }
 
     /**Save markers to an arraylist so don't have to re-download file on screen orientation changes*/
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        outState.putParcelableArrayList("reports",reports);
-        outState.putParcelable("position", mMapFragment.getMap().getCameraPosition());
+        outState.putParcelableArrayList("reports", reports);
+        //Parcelable position = null;
+        try {
+           position = mMapFragment.getMap().getCameraPosition();
+        }
+        catch (NullPointerException ex ){
+           position = new CameraPosition(new LatLng(36.991386, -122.060872), 14, 0, 0);
+        }
+        outState.putParcelable("position", position);
         super.onSaveInstanceState(outState);
     }
 

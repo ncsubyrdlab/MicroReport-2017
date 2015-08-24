@@ -7,10 +7,12 @@ import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -408,8 +410,14 @@ public class ReportActivity extends Activity implements
         submit_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //get dialog fields
+                //check for internet connection
                 EditText description_text = (EditText) findViewById(R.id.description);
+                if (!isNetworkConnected()) {
+                    description_text.setError("Internet connection required");
+                  return;
+                }
+                //get dialog fields
+
                 CheckBox current_location_box = (CheckBox) findViewById(R.id.currentlocationcheckbox);
                 Spinner building_spinner = (Spinner) findViewById(R.id.location_spinner);
                 EditText location_text = (EditText) findViewById(R.id.locationtextbox);
@@ -441,6 +449,13 @@ public class ReportActivity extends Activity implements
                 String androidId = Settings.Secure.getString(getBaseContext().getContentResolver(), Settings.Secure.ANDROID_ID);
                 SharedPreferences preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
                 String partID = preferenceSettings.getString("partID", "");
+
+                //check for empty description
+                description_text.setError(null);
+                if (TextUtils.isEmpty(description)) {
+                    description_text.setError(getString(R.string.error_field_required));
+                    return;
+                }
 
                 //post report
                 //Toast.makeText(getBaseContext(), "Submitting...", Toast.LENGTH_SHORT).show();
@@ -487,6 +502,10 @@ public class ReportActivity extends Activity implements
     private class postReport extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... params) {
+            if (!isNetworkConnected()) {
+                return "No network connection";
+            }
+
             String result;
             try {
                 URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/report.php");
@@ -535,7 +554,10 @@ public class ReportActivity extends Activity implements
     /**checks if network is connected*/
     private boolean isNetworkConnected() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        return (cm.getActiveNetworkInfo() != null);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null &&
+                activeNetwork.isConnected();
+        return (isConnected);
     }
 
     @Override
