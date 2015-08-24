@@ -21,8 +21,8 @@ android {
         applicationId 'edu.ucsc.psyc_files.microreport'
         minSdkVersion 11
         targetSdkVersion 22
-        versionCode 2
-        versionName '2.0'
+        versionCode 3
+        versionName '2.1'
     }
     buildTypes {
         release {
