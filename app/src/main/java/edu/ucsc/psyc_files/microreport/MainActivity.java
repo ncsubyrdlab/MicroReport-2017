@@ -715,8 +715,8 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         }
         try {
             do {    //take each line and read parts into report object
-                result = line.split("%delim%", 10);
-                reports.add(new Report(result[0], result[1], result[2], result[3], result[4], result[4].equals(partID),
+                result = line.split("%delim%", 11);
+                reports.add(new Report(result[0], result[1]+" ("+result[10]+")", result[2], result[3], result[4], result[4].equals(partID),
                         Boolean.parseBoolean(result[5]), Boolean.parseBoolean(result[6]), Boolean.parseBoolean(result[7]),
                         Boolean.parseBoolean(result[8]), Boolean.parseBoolean(result[9])));
                 line = br.readLine();
