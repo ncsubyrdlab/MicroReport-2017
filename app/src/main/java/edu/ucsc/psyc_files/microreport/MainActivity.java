@@ -422,17 +422,22 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
      * Refreshes the map. Right now just reloads the activity.
      */
     public void updateMap() {
-         Toast.makeText(this, "Updating map...", Toast.LENGTH_SHORT).show();
-        /**File cacheDir = getCacheDir();
-         File[] files = cacheDir.listFiles();
-         if (files != null) {
-         for (File file : files)
-         file.delete();
-         } **/
-        //reload activity
-        Intent intent = new Intent(this, MainActivity.class);
-        startActivity(intent);
-        finish();
+         if (isNetworkConnected()) {
+             Toast.makeText(this, "Updating map...", Toast.LENGTH_SHORT).show();
+             /**File cacheDir = getCacheDir();
+              File[] files = cacheDir.listFiles();
+              if (files != null) {
+              for (File file : files)
+              file.delete();
+              } **/
+             //reload activity
+             Intent intent = new Intent(this, MainActivity.class);
+             startActivity(intent);
+             finish();
+         }
+        else {
+             Toast.makeText(this, "No network connection", Toast.LENGTH_SHORT).show();
+         }
     }
 
     static class MyClusterManager<Report> extends ClusterManager {
