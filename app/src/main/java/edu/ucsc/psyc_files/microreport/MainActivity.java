@@ -105,6 +105,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
                 finish();
             }
             enableHttpResponseCache();
+
             //if just an orientation change or no network connection, don't download reports again
             if (savedInstanceState != null)  {
                 try {
@@ -123,6 +124,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
                 //todo: check age of file
                 //move map to center of campus
                 position = new CameraPosition(new LatLng(36.991386, -122.060872), 14, 0, 0);
+                reports = new ArrayList<Report>();
                 new getReports().execute();
             }
         } else {    //end if network is connected
@@ -172,63 +174,70 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         ArrayList<Report> new_list = new ArrayList<Report>();
         //filter reports
 
-        switch (position) {
-            case 1: //race
-                for (Report i : reports) {
-                    if (i.isRace()) {
-                        new_list.add(i);
+                switch (position) {
+                case 1: //race
+                    for (Report i : reports) {
+                        if (i.isRace()) {
+                            new_list.add(i);
+                        }
                     }
-                }
-                adapter = new ReportAdapter(this, new_list);
-                break;
-            case 2: //culture
-                for (Report i : reports) {
-                    if (i.isCulture()) {
-                        new_list.add(i);
+                    adapter = new ReportAdapter(this, new_list);
+                    break;
+                case 2: //culture
+                    for (Report i : reports) {
+                        if (i.isCulture()) {
+                            new_list.add(i);
+                        }
                     }
-                }
-                adapter = new ReportAdapter(this, new_list);
-                break;
-            case 3: //gender
-                for (Report i : reports) {
-                    if (i.isGender()) {
-                        new_list.add(i);
+                    adapter = new ReportAdapter(this, new_list);
+                    break;
+                case 3: //gender
+                    for (Report i : reports) {
+                        if (i.isGender()) {
+                            new_list.add(i);
+                        }
                     }
-                }
-                adapter = new ReportAdapter(this, new_list);
-                break;
-            case 4: //sexual orientaiton
-                for (Report i : reports) {
-                    if (i.isSex()) {
-                        new_list.add(i);
+                    adapter = new ReportAdapter(this, new_list);
+                    break;
+                case 4: //sexual orientaiton
+                    for (Report i : reports) {
+                        if (i.isSex()) {
+                            new_list.add(i);
+                        }
                     }
-                }
-                adapter = new ReportAdapter(this, new_list);
-                break;
-            case 5: //other
-                for (Report i : reports) {
-                    if (i.isOther()) {
-                        new_list.add(i);
+                    adapter = new ReportAdapter(this, new_list);
+                    break;
+                case 5: //other
+                    for (Report i : reports) {
+                        if (i.isOther()) {
+                            new_list.add(i);
+                        }
                     }
-                }
-                adapter = new ReportAdapter(this, new_list);
-                break;
-            case 6: //my reports
-                for (Report i : reports) {
-                    if (i.isUser_report()) {
-                        new_list.add(i);
+                    adapter = new ReportAdapter(this, new_list);
+                    break;
+                case 6: //my reports
+                    for (Report i : reports) {
+                        if (i.isUser_report()) {
+                            new_list.add(i);
+                        }
                     }
-                }
-                adapter = new ReportAdapter(this, new_list);
-                break;
-            default:
-                adapter = new ReportAdapter(this, reports);
-                break;
+                    adapter = new ReportAdapter(this, new_list);
+                    break;
+                default:
+                    //no list
+                    if (reports.isEmpty()) {
+                        //do nothing
+                    }
+                    else {
+                        adapter = new ReportAdapter(this, reports);
+                    }
+                    break;
 
-        }
+            }
 
-        list.setAdapter(adapter);
-        adapter.notifyDataSetChanged();
+            list.setAdapter(adapter);
+            adapter.notifyDataSetChanged();
+
     }
 
     @Override
@@ -661,7 +670,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         protected ArrayList<Report> doInBackground(String... params) {
             if (!isNetworkConnected()) {
                 //cancel if network is not connected
-                return null;
+                return reports;
             }
             try {
                 URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/getreports.php");
@@ -676,11 +685,11 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
                 if (con.getResponseCode() == 200) {
                     reports = parseReports(con.getInputStream());
                 } else {
-                    return null;
+                    return reports;
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();
-                return null;
+                return reports;
             }
 
             return reports;
@@ -689,7 +698,9 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         @Override
         protected void onPostExecute(ArrayList<Report> reports) {
             super.onPostExecute(reports);
-            setUpMap();
+            if (!reports.isEmpty()) {
+                setUpMap();
+            }
         }
     }
 

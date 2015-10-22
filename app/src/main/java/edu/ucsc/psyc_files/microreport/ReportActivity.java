@@ -459,7 +459,7 @@ public class ReportActivity extends Activity implements
 
                 //post report
                 //Toast.makeText(getBaseContext(), "Submitting...", Toast.LENGTH_SHORT).show();
-                String output = "description=" + Uri.encode(description) + "&locationLat=" + Uri.encode(lat) +
+                String output = "description=" + Uri.encode(description.replace("'", "\\'")) + "&locationLat=" + Uri.encode(lat) +
                         "&locationLong=" + Uri.encode(longi) + "&locationBuilding=" +
                         Uri.encode(building_spinner.getSelectedItem().toString()) + "&locationOther=" +
                         Uri.encode(other_location) + "&raceCheck=" + String.valueOf(race) +
@@ -538,8 +538,12 @@ public class ReportActivity extends Activity implements
         @Override
         protected void onPostExecute (String result){
             super.onPostExecute(result);
-            Toast.makeText(getBaseContext(), ""+ result.trim(), Toast.LENGTH_SHORT).show();
+            toastResult(result);
         }
+    }
+
+    private void toastResult (String result) {
+        Toast.makeText(this, ""+ result.trim(), Toast.LENGTH_SHORT).show();
     }
 
     /**set up location client*/
