@@ -85,7 +85,8 @@ public class FeedbackActivity extends Activity {
         //open connection and post feedback
         EditText text = (EditText) findViewById(R.id.feedbacktext);
         //String androidId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
-        String output = "feedback="+Uri.encode(text.getText().toString())+"&installationID="+Uri.encode(Installation.id(this));
+        String feedback = text.getText().toString();
+            String output = "feedback="+Uri.encode(feedback.replace("'", "\\'"))+"&installationID="+Uri.encode(Installation.id(this));
         new postFeedback().execute(output);
         } else Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
     }

@@ -64,6 +64,7 @@
         <item>Sexual Orientation</item>
         <item>Other</item>
         <item>My Reports</item>
+        <item>Last Week</item>
     </string-array>
 
     <!--Confirm report popup -->
@@ -81,7 +82,8 @@
         \n\nThis app is designed to aid in reporting microaggressions as an educational and supportive resource. If you would like a response from authorities about an incident, go to http://reporthate.ucsc.edu and submit a hate/bias report.
         \n\n<b>Police Non-Emergency</b> (831) 459-2231
         \n<b>Anonymous Tip Line</b> (831) 459-3TIP
-    \n<b>Counseling and Psychological Services</b> (831) 459-2628
+        \n<b>Campus Advocacy, Resources and Education</b> care.ucsc.edu (831) 502-CARE(2273) care@ucsc.edu
+        \n<b>Counseling and Psychological Services</b> (831) 459-2628
     \n<b>Cantu GLBTI Resource Center</b> (831) 459-2468 queer@ucsc.edu
     \n<b>Disability Resource Center</b> (831) 459-2089 drc@ucsc.edu
     \n<b>Ethnic Resource Centers</b>     \n     AARCC (831) 459-2427 aarcc@ucsc.edu

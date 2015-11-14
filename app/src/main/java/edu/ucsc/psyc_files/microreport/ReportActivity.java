@@ -13,6 +13,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -33,10 +34,13 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashSet;
+import java.util.Set;
 
 
 /**
@@ -406,16 +410,13 @@ public class ReportActivity extends Activity implements
                 finish();
             }
         });
-        Button submit_button = (Button) findViewById(R.id.submit);
+        final Button submit_button = (Button) findViewById(R.id.submit);
         submit_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //check for internet connection
+
                 EditText description_text = (EditText) findViewById(R.id.description);
-                if (!isNetworkConnected()) {
-                    description_text.setError("Internet connection required");
-                  return;
-                }
+
                 //get dialog fields
 
                 CheckBox current_location_box = (CheckBox) findViewById(R.id.currentlocationcheckbox);
@@ -468,7 +469,29 @@ public class ReportActivity extends Activity implements
                         String.valueOf(else_checked) + "&bother=" + Uri.encode(String.valueOf(bother)) +
                         "&installationID=" + Uri.encode(Installation.id(getBaseContext())) + "&androidID=" + Uri.encode(androidId) +
                         "&partID=" + Uri.encode(partID);
-                new postReport().execute(output);
+
+
+                //check for internet connection
+                if (!isNetworkConnected()) {
+                    if (saveReport(output)) {
+                        Toast.makeText(getBaseContext(), "No internet connection: Saving report.", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getBaseContext(), "No internet connection.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                } else {
+                    //post report
+                    new postReport().execute(output);
+                }
+
+                //clear cache
+                File cacheDir = getCacheDir();
+                File[] files = cacheDir.listFiles();
+                if (files != null) {
+                    for (File file : files)
+                        file.delete();
+                }
+                //restart activity
                 Intent intent = new Intent(getBaseContext(), MainActivity.class);
                 startActivity(intent);
                 finish();
@@ -476,9 +499,9 @@ public class ReportActivity extends Activity implements
         });
 
         //check internet connection
-        if (!isNetworkConnected()) {
+       /** if (!isNetworkConnected()) {
             Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
-        }
+        } */
 
         //check to Google Play Services is installed
         checkGooglePlay();
@@ -496,10 +519,36 @@ public class ReportActivity extends Activity implements
         mLocationRequest.setFastestInterval(5000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
+
+    /**
+     * If there is no internet connection, tries to save the report to shared preferences to send out next time map is refreshed
+     * @param output The assembled report file.
+     * @return
+     */
+    private boolean saveReport(String output) {
+        SharedPreferences preferenceSettings;
+        SharedPreferences.Editor preferenceEditor;
+        try {
+            preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+            //copy existing reports from string set
+            Set<String> savedReports = new HashSet();
+            savedReports.addAll(preferenceSettings.getStringSet("savedReports", savedReports));
+            //add latest report to set
+            savedReports.add(output);
+            preferenceEditor = preferenceSettings.edit();
+            preferenceEditor.putStringSet("savedReports", savedReports);
+            preferenceEditor.apply();
+            return true;
+        } catch (Exception ex) {
+            Log.d("saveReport", ex + "output: "+ output);
+            return false;
+        }
+    }
+
     /**
      * Tries to submit the report to the reports table. The php file echoes the result.
      */
-    private class postReport extends AsyncTask<String, Void, String> {
+    public class postReport extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... params) {
             if (!isNetworkConnected()) {

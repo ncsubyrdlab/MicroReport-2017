@@ -14,6 +14,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -56,6 +57,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * MicroReport 2.0
@@ -103,68 +106,71 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
                 Intent intent = new Intent(this, RegisterActivity.class);
                 startActivity(intent);
                 finish();
-            }
-            enableHttpResponseCache();
+            } else {
+                enableHttpResponseCache();
 
-            //if just an orientation change or no network connection, don't download reports again
-            if (savedInstanceState != null)  {
-                try {
-                    reports = savedInstanceState.getParcelableArrayList("reports");
-                    position = savedInstanceState.getParcelable("position");
-                }
-                catch (NullPointerException ex) {
+                //if just an orientation change or no network connection, don't download reports again
+                if (savedInstanceState != null) {
+                    try {
+                        reports = savedInstanceState.getParcelableArrayList("reports");
+                        position = savedInstanceState.getParcelable("position");
+                    } catch (NullPointerException ex) {
+                        position = new CameraPosition(new LatLng(36.991386, -122.060872), 14, 0, 0);
+                    }
+                    setUpMap();
+                    //todo: preserve camera position on orientation changes
+                    //mMapFragment.getMap().moveCamera(CameraUpdateFactory.newCameraPosition(position));
+                } else {
+                    //otherwise download reports (calls setUpMap)
+                    //todo: check age of file
+                    //move map to center of campus
                     position = new CameraPosition(new LatLng(36.991386, -122.060872), 14, 0, 0);
+                    reports = new ArrayList<Report>();
+                    new getReports().execute();
                 }
-                setUpMap();
-                //todo: preserve camera position on orientation changes
-                //mMapFragment.getMap().moveCamera(CameraUpdateFactory.newCameraPosition(position));
-            }
-            else {
-                //otherwise download reports (calls setUpMap)
-                //todo: check age of file
-                //move map to center of campus
-                position = new CameraPosition(new LatLng(36.991386, -122.060872), 14, 0, 0);
-                reports = new ArrayList<Report>();
-                new getReports().execute();
-            }
-        } else {    //end if network is connected
-            Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
-        }
-
-        //filter
-        //populate spinner
-        if (findViewById(R.id.reports) != null) {
-            Spinner spinner = (Spinner) findViewById(R.id.filter_spinner);
-            ArrayAdapter<CharSequence> spinnerArrayAdapter = ArrayAdapter.createFromResource(this, R.array.filter_options, android.R.layout.simple_spinner_item);
-                    //this, android.R.layout.simple_spinner_item, R.array.filter_options);
-            spinnerArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            spinner.setAdapter(spinnerArrayAdapter);
-            spinner.setOnItemSelectedListener(this);
-        }
-
-        //navigation drawer
-        String[] menuList = getResources().getStringArray(R.array.menu);
-        nav = (ListView) findViewById(R.id.navigation_drawer);
-        nav.setAdapter(new ArrayAdapter<String>(this, R.layout.drawer_list_item, menuList));
-        nav.setOnItemClickListener(new DrawerItemClickListener());
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
-                R.string.drawer_open, R.string.drawer_close) {
-
-            /** Called when a drawer has settled in a completely open state. */
-            public void onDrawerOpened(View drawerView) {
-                getActionBar().setTitle(R.string.navigation);
+            }   //end check registration
+            }else{    //end if network is connected
+                Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
             }
 
-            /** Called when a drawer has settled in a completely closed state. */
-            public void onDrawerClosed(View view) {
-                getActionBar().setTitle(R.string.app_name);
+            //filter
+            //populate spinner
+            if (findViewById(R.id.reports) != null) {
+                Spinner spinner = (Spinner) findViewById(R.id.filter_spinner);
+                ArrayAdapter<CharSequence> spinnerArrayAdapter = ArrayAdapter.createFromResource(this, R.array.filter_options, android.R.layout.simple_spinner_item);
+                //this, android.R.layout.simple_spinner_item, R.array.filter_options);
+                spinnerArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spinner.setAdapter(spinnerArrayAdapter);
+                spinner.setOnItemSelectedListener(this);
             }
-        };
-        mDrawerToggle.setDrawerIndicatorEnabled(true);
-        mDrawerLayout.setDrawerListener(mDrawerToggle);
-        getActionBar().setDisplayHomeAsUpEnabled(true);
-        getActionBar().setHomeButtonEnabled(true);
+
+            //navigation drawer
+            String[] menuList = getResources().getStringArray(R.array.menu);
+            nav = (ListView) findViewById(R.id.navigation_drawer);
+            nav.setAdapter(new ArrayAdapter<String>(this, R.layout.drawer_list_item, menuList));
+            nav.setOnItemClickListener(new DrawerItemClickListener());
+            mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+            mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
+                    R.string.drawer_open, R.string.drawer_close) {
+
+                /**
+                 * Called when a drawer has settled in a completely open state.
+                 */
+                public void onDrawerOpened(View drawerView) {
+                    getActionBar().setTitle(R.string.navigation);
+                }
+
+                /**
+                 * Called when a drawer has settled in a completely closed state.
+                 */
+                public void onDrawerClosed(View view) {
+                    getActionBar().setTitle(R.string.app_name);
+                }
+            };
+            mDrawerToggle.setDrawerIndicatorEnabled(true);
+            mDrawerLayout.setDrawerListener(mDrawerToggle);
+            getActionBar().setDisplayHomeAsUpEnabled(true);
+            getActionBar().setHomeButtonEnabled(true);
 
     }
 
@@ -223,6 +229,16 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
                     }
                     adapter = new ReportAdapter(this, new_list);
                     break;
+                    case 7: //last week
+                        long week = System.currentTimeMillis() - 604800000;
+                        Log.d("week timestamp", String.valueOf(week));
+                        for (Report i : reports) {
+                            if ((Long.parseLong(i.getRawTimestamp())*1000 - week) > 0) {
+                                new_list.add(i);
+                            }
+                        }
+                        adapter = new ReportAdapter(this, new_list);
+                        break;
                 default:
                     //no list
                     if (reports.isEmpty()) {
@@ -419,17 +435,34 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
     }
 
     /**
-     * Refreshes the map. Right now just reloads the activity.
+     * Refreshes the map. Clears the cache and reloads the activity.
      */
     public void updateMap() {
          if (isNetworkConnected()) {
              Toast.makeText(this, "Updating map...", Toast.LENGTH_SHORT).show();
-             /**File cacheDir = getCacheDir();
+             //clear cache
+             File cacheDir = getCacheDir();
               File[] files = cacheDir.listFiles();
               if (files != null) {
               for (File file : files)
               file.delete();
-              } **/
+              }
+
+             //check for and try to post saved reports
+             SharedPreferences preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+             Set<String> savedReports = new HashSet();
+             savedReports.addAll(preferenceSettings.getStringSet("savedReports", savedReports));
+            //loop through and get output
+             //todo: check for errors
+             for (String r : savedReports) {
+                 new postSavedReport().execute(r);
+             }
+             //clear array and preferences
+             savedReports.clear();
+             SharedPreferences.Editor preferenceEditor = preferenceSettings.edit();
+             preferenceEditor.remove("savedReports");
+             preferenceEditor.commit();
+
              //reload activity
              Intent intent = new Intent(this, MainActivity.class);
              startActivity(intent);
@@ -736,7 +769,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
                         Boolean.parseBoolean(result[5]), Boolean.parseBoolean(result[6]), Boolean.parseBoolean(result[7]),
                         Boolean.parseBoolean(result[8]), Boolean.parseBoolean(result[9])));
                 line = br.readLine();
-            } while (!line.equals(""));
+            } while (!line.equals("")); //add %end% delimiter to php code?
         }
         catch (ArrayIndexOutOfBoundsException ex) { //not sure why this was necessary, it was fine before!
             line = br.readLine();
@@ -887,6 +920,57 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
 
     }
 
+
+    /**
+     * Copied from ReportActivity
+     * Tries to submit the report to the reports table. The php file echoes the result.
+     */
+    public class postSavedReport extends AsyncTask<String, Void, String> {
+        @Override
+        protected String doInBackground(String... params) {
+            if (!isNetworkConnected()) {
+                return "No network connection";
+            }
+
+            String result;
+            try {
+                URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/report.php");
+                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                con.setDoOutput(true);
+                con.setChunkedStreamingMode(0);
+                OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
+                out.write(params[0]);
+                out.close();
+
+                if (con.getResponseCode() == 200) {
+                    BufferedReader reader = null;
+                    StringBuilder stringBuilder;
+                    reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                    stringBuilder = new StringBuilder();
+                    String line = null;
+                    while ((line = reader.readLine()) != null) {
+                        stringBuilder.append("\n"+line);
+                    }
+                    result = stringBuilder.toString();
+                } else {
+                    result = con.getResponseMessage();
+                }
+                con.disconnect();
+                return result;
+            } catch (Exception ex) {
+                return ex.toString();
+            }
+        }
+        @Override
+        protected void onPostExecute (String result){
+            super.onPostExecute(result);
+            toastResult(result);
+        }
+    }
+
+    private void toastResult (String result) {
+        Toast.makeText(this, "Saved Report: "+ result.trim(), Toast.LENGTH_SHORT).show();
+    }
 
 }
 
