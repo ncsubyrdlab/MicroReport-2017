@@ -8,7 +8,7 @@
         android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="edu.ucsc.psyc_files.microreport.BulletinBoard"
+        tools:context="edu.ucsc.sites.microreport.BulletinBoard"
         style="@style/UCSCBlue"
         android:paddingLeft="8dp"
         android:paddingRight="8dp"

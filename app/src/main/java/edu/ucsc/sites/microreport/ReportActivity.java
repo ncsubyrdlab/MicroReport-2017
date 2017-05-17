@@ -1,4 +1,4 @@
-package edu.ucsc.psyc_files.microreport;
+package edu.ucsc.sites.microreport;
 
 import android.app.Activity;
 import android.content.Context;
@@ -49,6 +49,7 @@ import java.util.Set;
  * coordinates will be sent on. All of the fields are combined and sent to a php file on the server.
  * Uses Google Location Services to find the user's location. The location client
  * is started when the activity starts and stops when the activity is no longer visible.
+ * v3: changed reporting form, removed building coordinates
  */
 public class ReportActivity extends Activity implements
         ConnectionCallbacks,
@@ -415,6 +416,9 @@ public class ReportActivity extends Activity implements
             @Override
             public void onClick(View v) {
 
+
+                SharedPreferences preferenceSettings;
+                preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
                 EditText description_text = (EditText) findViewById(R.id.description);
 
                 //get dialog fields
@@ -436,9 +440,15 @@ public class ReportActivity extends Activity implements
                 if (currentlocation) {  //use device location
                     lat = String.valueOf(mCurrentLocation.getLatitude());
                     longi = String.valueOf(mCurrentLocation.getLongitude());
-                } else {    //use building coordinates
-                    lat = buildings[1][building_position];
-                    longi = buildings[2][building_position];
+
+                } else {
+                    //use home zipcode
+
+                    String homeZIPlatlng = preferenceSettings.getString("homeZIPlatlng", "36.991386,-122.060872");
+                    String[] latlong =  homeZIPlatlng.split(",");
+                    lat = latlong[0];
+                    longi = latlong[1];
+                    description = description+" [default location]";
                 }
                 String other_location = location_text.getText().toString();
                 boolean race = race_check.isChecked();
@@ -448,7 +458,6 @@ public class ReportActivity extends Activity implements
                 boolean else_checked = else_check.isChecked();
                 int bother = bother_seek.getProgress();
                 String androidId = Settings.Secure.getString(getBaseContext().getContentResolver(), Settings.Secure.ANDROID_ID);
-                SharedPreferences preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
                 String partID = preferenceSettings.getString("partID", "");
 
                 //check for empty description

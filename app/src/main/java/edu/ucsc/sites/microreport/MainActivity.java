@@ -1,10 +1,12 @@
-package edu.ucsc.psyc_files.microreport;
+package edu.ucsc.sites.microreport;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.location.Location;
+import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -29,10 +31,14 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
@@ -70,10 +76,15 @@ import java.util.Set;
  * that is then added to a cluster manager so that the markers cluster at certain zoom levels.
  * Uses Utility Library for marker clustering: https://github.com/googlemaps/android-maps-utils
  *
+ * 3.0
+ * centers map on current location or home zipcode
+ * map updated: https://developers.google.com/maps/documentation/android-api/map-with-marker
+ *
  */
-public class MainActivity extends Activity implements OnMapReadyCallback, AdapterView.OnItemSelectedListener {
+public class MainActivity extends Activity implements OnMapReadyCallback, AdapterView.OnItemSelectedListener,
+        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
-    private static MapFragment mMapFragment;  //Google map fragment
+    private MapFragment mMapFragment;  //Google map fragment
     private static MyClusterManager<Report> mClusterManager;  //Handles rendering of markers at different zoom levels
     private ReportAdapter adapter;   //handles the list of reports in landscape mode
     private DefaultClusterRenderer<Report> clusterRenderer; //my implementation of Google utility library cluster renderer
@@ -82,7 +93,10 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
     private ActionBarDrawerToggle mDrawerToggle;
     private ArrayList<Report> reports;
     private String partID;
+    private String homeZIPlatlng;
     private CameraPosition position;
+    private Location mCurrentLocation;
+    private GoogleApiClient mGoogleApiClient;
 
     /**
      * Opens the main page and displays the reports on a map in clusters based on zoom level.
@@ -101,12 +115,13 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
             SharedPreferences preferenceSettings;
             preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
             partID = preferenceSettings.getString("partID", "false");
-            if (partID == "false") {
+            if (partID.equals("false")) {
                 //go to registration page
                 Intent intent = new Intent(this, RegisterActivity.class);
                 startActivity(intent);
                 finish();
             } else {
+
                 enableHttpResponseCache();
 
                 //if just an orientation change or no network connection, don't download reports again
@@ -123,8 +138,46 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
                 } else {
                     //otherwise download reports (calls setUpMap)
                     //todo: check age of file
-                    //move map to center of campus
-                    position = new CameraPosition(new LatLng(36.991386, -122.060872), 14, 0, 0);
+
+                    //get home zipcode
+                    homeZIPlatlng = preferenceSettings.getString("homeZIPlatlng", "36.991386,-122.060872");
+
+                    //set up location client
+                    buildGoogleApiClient();
+
+                    //Create a new location client, using the enclosing class to handle callbacks.
+                    LocationRequest mLocationRequest = new LocationRequest();
+                    mLocationRequest.setInterval(10000);
+                    mLocationRequest.setFastestInterval(5000);
+                    mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+
+                    try {
+                        mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(
+                                mGoogleApiClient);
+                        if (mCurrentLocation == null) {
+                            Toast.makeText(this, "location: null", Toast.LENGTH_SHORT).show();
+                            //try again
+                            mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(
+                                    mGoogleApiClient);}
+                        Toast.makeText(this, "getting location: "+mCurrentLocation, Toast.LENGTH_SHORT).show();
+
+                        if (mCurrentLocation == null) {
+                            // move map to center of homeZIP
+                            String[] latlong = homeZIPlatlng.split(",");
+                            double latitude = Double.parseDouble(latlong[0]);
+                            double longitude = Double.parseDouble(latlong[1]);
+                            position = new CameraPosition(new LatLng(latitude, longitude), 14, 0, 0);
+                            Toast.makeText(this, "location: center of zip "+position, Toast.LENGTH_SHORT).show();
+                        } else {
+                            position = new CameraPosition(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()), 14, 0, 0);
+                            Toast.makeText(this, "location: " + position, Toast.LENGTH_SHORT).show();
+                        }
+
+                    } catch (Exception ex) {
+                        position = new CameraPosition(new LatLng(36.991386, -122.060872), 14, 0, 0);
+                        Toast.makeText(this, "exception: "+ex, Toast.LENGTH_LONG).show();
+                    }
                     reports = new ArrayList<Report>();
                     new getReports().execute();
                 }
@@ -146,6 +199,10 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
 
             //navigation drawer
             String[] menuList = getResources().getStringArray(R.array.menu);
+            SharedPreferences preferenceSettings;
+            preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+            String points = preferenceSettings.getString("points", "temporarily unavailable");
+            menuList[4] = menuList[4] + points;
             nav = (ListView) findViewById(R.id.navigation_drawer);
             nav.setAdapter(new ArrayAdapter<String>(this, R.layout.drawer_list_item, menuList));
             nav.setOnItemClickListener(new DrawerItemClickListener());
@@ -287,17 +344,19 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
                 startActivity(intent);
                 break;
             case 2:
-                intent = new Intent(this, HelpActivity.class);
+                intent = new Intent(this, SurveyActivity.class);
                 startActivity(intent);
                 break;
             case 3:
-                intent = new Intent(this, FeedbackActivity.class);
+                Uri webpage = Uri.parse("http://microreport.sites.ucsc.edu");
+                intent = new Intent(Intent.ACTION_VIEW, webpage);
                 startActivity(intent);
                 break;
             case 4:
-                Uri webpage = Uri.parse("http://people.ucsc.edu/~cmbyrd/microaggressionstudy.html");
-                intent = new Intent(Intent.ACTION_VIEW, webpage);
+                Uri webpage2 = Uri.parse("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/v2/redeem_points.php?accesscode="+partID);
+                intent = new Intent(Intent.ACTION_VIEW, webpage2);
                 startActivity(intent);
+                break;
             default:
                 break;
         }
@@ -711,7 +770,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
                 return reports;
             }
             try {
-                URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/getreports.php");
+                URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/v2/getreports.php");
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
                 con.setDoOutput(true);
                 con.setChunkedStreamingMode(0);
@@ -764,12 +823,12 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         }
         try {
             do {    //take each line and read parts into report object
-                result = line.split("%delim%", 11);
+                result = line.split("%delim%", 12);
                 reports.add(new Report(result[0], result[1]+" ("+result[10]+")", result[2], result[3], result[4], result[4].equals(partID),
                         Boolean.parseBoolean(result[5]), Boolean.parseBoolean(result[6]), Boolean.parseBoolean(result[7]),
                         Boolean.parseBoolean(result[8]), Boolean.parseBoolean(result[9])));
                 line = br.readLine();
-            } while (!line.equals("")); //add %end% delimiter to php code?
+            } while (!line.equals("%end%")); //add %end% delimiter to php code?
         }
         catch (ArrayIndexOutOfBoundsException ex) { //not sure why this was necessary, it was fine before!
             line = br.readLine();
@@ -971,6 +1030,63 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
     private void toastResult (String result) {
         Toast.makeText(this, "Saved Report: "+ result.trim(), Toast.LENGTH_SHORT).show();
     }
+
+
+    /**set up location client*/
+    protected synchronized void buildGoogleApiClient() {
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+    }
+    /*
+     * Called by Location Services when the request to connect the
+     * client finishes successfully. Requests last location or tries to connect again
+     */
+    @Override
+    public void onConnected(Bundle dataBundle) {
+        mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(
+                mGoogleApiClient);
+        if (mCurrentLocation == null) {
+            mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(
+                    mGoogleApiClient);
+        }
+    }
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+    /*
+        * Called by Location Services if the attempt to
+        * Location Services fails.
+        */
+//    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        Toast.makeText(this, "Unable to connect", Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * // necessary to implement this even if don't use it
+     * @param location
+     */
+    //@Override
+    public void onLocationChanged(Location location) {
+        mCurrentLocation = location;
+
+    }
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mGoogleApiClient.disconnect();
+    }
+
 
 }
 

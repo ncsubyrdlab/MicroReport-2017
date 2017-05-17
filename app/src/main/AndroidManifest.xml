@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="edu.ucsc.psyc_files.microreport" >
+    package="edu.ucsc.sites.microreport" >
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -8,7 +8,6 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="com.android.alarm.permission.SET_ALARM"/>
 
     <uses-feature
         android:glEsVersion="0x00020000"
@@ -47,32 +46,15 @@
             android:windowSoftInputMode="stateHidden" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="edu.ucsc.psyc_files.microreport.MainActivity" />
+                android:value=".MainActivity" />
         </activity>
         <activity
-            android:name=".ConfirmReport"
-            android:label="@string/title_activity_confirm_report"
-            android:parentActivityName=".ReportActivity" >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="edu.ucsc.psyc_files.microreport.ReportActivity" />
-        </activity>
-        <activity
-            android:name=".HelpActivity"
+            android:name=".SurveyActivity"
             android:label="@string/title_activity_help"
             android:parentActivityName=".MainActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="edu.ucsc.psyc_files.microreport.MainActivity" />
-        </activity>
-        <activity
-            android:name=".FeedbackActivity"
-            android:label="@string/title_activity_feedback"
-            android:parentActivityName=".MainActivity"
-            android:windowSoftInputMode="stateHidden" >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="edu.ucsc.psyc_files.microreport.MainActivity" />
+                android:value=".MainActivity" />
         </activity>
         <activity
             android:name=".RegisterActivity"
@@ -86,15 +68,8 @@
             android:parentActivityName=".MainActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="edu.ucsc.psyc_files.microreport.MainActivity" />
+                android:value=".MainActivity" />
         </activity>
-
-        <service
-            android:name=".NotificationService"
-            android:enabled="true"
-            android:exported="false"
-            android:label="@string/service_name" >
-        </service>
 
         <receiver
             android:name="com.google.android.gms.analytics.AnalyticsReceiver"

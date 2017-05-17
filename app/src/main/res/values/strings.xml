@@ -4,26 +4,24 @@
 
     <!--Action bar and navigation-->
     <string name="action_report">Report a Microaggression</string>
-    <string name="action_gethelp">Get Help</string>
-    <string name="action_feedback">Give Feedback</string>
+    <string name="action_gethelp">Surveys</string>
     <string name="action_webpage">Study Website</string>
     <string name="action_clear">Refresh Map</string>
-    <string name="action_bulletin">Good News</string>
+    <string name="action_bulletin">Blog</string>
     <string name="drawer_open">Navigation Open</string>
     <string name="drawer_close">Navigation Closed</string>
     <string name="navigation">Navigation</string>
     <string-array name="menu">
         <item>Home</item>
-        <item>Good News</item>
-        <item>Get Help</item>
-        <item>Give Feedback</item>
-        <item>Study Website (external)</item>
+        <item>Blog</item>
+        <item>Surveys</item>
+        <item>Study Website</item>
+        <item><i>Your Points: </i></item>
     </string-array>
 
     <!-- Main page -->
     <string name="app_name">MicroReport</string>
-    <string name="title_activity_help">Resources</string>
-    <string name="title_activity_feedback">Give Feedback</string>
+    <string name="title_activity_help">Surveys</string>
     <string name="sort_A">Sort Ascending</string>
     <string name="sort_D">Sort Descending</string>
     <string name="my_reports">Reports</string>
@@ -156,22 +154,19 @@
     \nUse the \"Give Feedback\" form to report problems with the app or post general comments. If you would like to contact the research team directly, contact
     Dr. Christy Byrd at cmbyrd@ucsc.edu or (831) 459-3970.</string>
 
-    <!--Feedback Page-->
-    <string name="feedback"><b>Report bugs or an error message, or give any other feedback</b></string>
-    <string name="feedback_hint">Enter feedback here</string>
-
 
     <!--Registration Page-->
     <string name="title_activity_login">Register Device</string>
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email address</string>
-    <string name="prompt_name">First name</string>
+    <string name="prompt_name">Access code</string>
     <string name="action_sign_in">Register</string>
 
     <string name="registerhead"><b>Register Your Device</b></string>
-        <string name = "registersub">Enter your email address and name below.\nAn internet connection is required to register.
-        \nBy registering, you agree to the conditions of the End User License Agreement \nhttp://people.ucsc.edu/~cmbyrd/MicroReport_EULA.html
+        <string name = "registersub">Enter your access code and the email you registered with below. If you do not have an access code, register for one
+            <a href='https://microreport.sites.ucsc.edu/register-to-use-microreport/'>by clicking here</a>. If you are reinstalling the app or registering a new device, you do not need to request a new access code.
+
         </string>
     <string name="error_invalid_email">This email address is invalid</string>
     <string name="error_field_required">This field is required</string>
@@ -180,7 +175,5 @@
     <string name="action_settings">Settings</string>
     <string name="service_name">MicroReport Background Notification Service</string>
 
-    <!--Good News page-->
-    <string name="good_news">Send us your good news and affirmations at microreport-goodnews-groups@ucsc.edu. You can submit interesting events and resources from on and off campus as well as post affirmations and other positive messages. We\'ll also use this space to keep you updated about the study.</string>
 
 </resources>

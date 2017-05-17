@@ -1,4 +1,4 @@
-package edu.ucsc.psyc_files.microreport;
+package edu.ucsc.sites.microreport;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -28,6 +28,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.acra.ACRA;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -41,6 +42,7 @@ import java.net.URL;
  * participant ID and email address. Is displayed as first screen as long as the installation is
  * not registered.
  * Based on Login Activity template.
+ * v3: just asks for access code and confirms with users DB, removes new device flag, backend checks that install id is new
  */
 public class RegisterActivity extends Activity {
 
@@ -48,16 +50,16 @@ public class RegisterActivity extends Activity {
      * Keep track of the login task to ensure we can cancel it if requested.
      */
     private UserLoginTask mAuthTask = null;
+    private GeoCodeTask mAuthTask2 = null;
 
     // UI references.
     private AutoCompleteTextView mEmailView;
-    private EditText mFnameView;
+    private EditText mAccessCodeView;
     private TextView mResult;
     private View mProgressView;
     private View mLoginFormView;
     private Button mRegisterButton;
     private Button mFinishButton;
-    private Button mNewButton;
     private SharedPreferences preferenceSettings;
     private SharedPreferences.Editor preferenceEditor;
 
@@ -103,8 +105,8 @@ public class RegisterActivity extends Activity {
             // Set up the login form.
             mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
 
-            mFnameView = (EditText) findViewById(R.id.fname);
-            mFnameView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            mAccessCodeView = (EditText) findViewById(R.id.access_code);
+            mAccessCodeView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
                 @Override
                 public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
                     if (id == R.id.login || id == EditorInfo.IME_NULL) {
@@ -141,20 +143,20 @@ public class RegisterActivity extends Activity {
 
         // Reset errors.
         mEmailView.setError(null);
-        mFnameView.setError(null);
+        mAccessCodeView.setError(null);
 
         // Store values at the time of the login attempt.
         String email = mEmailView.getText().toString();
-        String fname = mFnameView.getText().toString();
+        String access_code = mAccessCodeView.getText().toString();
 
         boolean cancel = false;
         View focusView = null;
 
 
         // Check if the user entered an ID
-        if (TextUtils.isEmpty(fname)) {
-            mFnameView.setError(getString(R.string.error_field_required));
-            focusView = mFnameView;
+        if (TextUtils.isEmpty(access_code)) {
+            mAccessCodeView.setError(getString(R.string.error_field_required));
+            focusView = mAccessCodeView;
             cancel = true;
         }
 
@@ -178,7 +180,7 @@ public class RegisterActivity extends Activity {
             // perform the user registration attempt.
             showProgress(true);
             String androidId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
-            mAuthTask = new UserLoginTask(email, fname, Installation.id(this), androidId, false);
+            mAuthTask = new UserLoginTask(email, access_code, Installation.id(this));
             mAuthTask.execute((Void) null);
         }
     }
@@ -239,22 +241,31 @@ public class RegisterActivity extends Activity {
      *
      * Android ID is collected but not checked
      * because some models do not have a unique Android ID.
+     *
+     * v3: confirms the access code is in the DB and matches the email address and is confirmed
+     * stores the home zipcode and ID number in sharedPreferences
      */
     public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
 
         private final String mEmail;
-        private final String mFname;
+        private final String mAccessCode;
         private final String mInstallid;
-        private final String mAndroidid;
         private String result;
         private boolean mNewDevice;
 
-        UserLoginTask(String email, String fname, String installid, String androidid, boolean newDevice) {
+        //v2
+        UserLoginTask(String email, String access_code, String installid, boolean newDevice) {
             mEmail = email;
-            mFname = fname;
+            mAccessCode = access_code;
             mInstallid = installid;
-            mAndroidid = androidid;
             mNewDevice = newDevice;
+        }
+
+        //v3
+        UserLoginTask(String email, String access_code, String installid) {
+            mEmail = email;
+            mAccessCode = access_code;
+            mInstallid = installid;
         }
 
         @Override
@@ -262,19 +273,26 @@ public class RegisterActivity extends Activity {
             //send email, installation number, and Android ID to file
             //server generates participant ID and sends back
             //change so that returns response from server "Registration Complete" etc.
-            //save participant ID and email to shared preferences
+            //save participant ID and home zipcode to shared preferences
 
             try {
-                URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/register.php");
+                URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/v2/register_device.php");
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
                 con.setDoOutput(true);
                 con.setChunkedStreamingMode(0);
                 //String basicAuth = "Basic " + new String(Base64.encode("MRapp:sj8719i".getBytes(), Base64.DEFAULT));
                 //con.setRequestProperty("Authorization", basicAuth);
 
+                //get device info
+                String OS = "OS: "+System.getProperty("os.version") + "(" + android.os.Build.VERSION.INCREMENTAL + ")";
+                String API = "//API: "+android.os.Build.VERSION.SDK_INT;
+                String deviceType = "//Device type: "+android.os.Build.DEVICE;
+                String model = "//Model: "+android.os.Build.MODEL + " ("+ android.os.Build.PRODUCT + ")";
+
                 //attempt to register user
                 OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
-                out.write("email=" + Uri.encode(mEmail) + "&firstName=" + Uri.encode(mFname) + "&installationID=" + Uri.encode(mInstallid) + "&deviceID=" + Uri.encode(mAndroidid)+ "&newDevice=" + mNewDevice);
+                out.write("email=" + Uri.encode(mEmail) + "&ID=" + Uri.encode(mAccessCode) + "&installationID=" + Uri.encode(mInstallid)
+                +"&deviceInfo="+Uri.encode(OS+API+deviceType+model));
                 out.close();
 
                 if (con.getResponseCode() == 200) {
@@ -292,7 +310,7 @@ public class RegisterActivity extends Activity {
                     return true;
                 } else {
                     con.disconnect();
-                    result = "Unable to open connection to URL";
+                    result = "Unable to connect to the internet";
                     return false;
                 }
 
@@ -316,69 +334,86 @@ public class RegisterActivity extends Activity {
 
                 //todo: make keyboard go away after submitting
                 //check result
+                if (result.contains("SUCCESS")) {
+                    mResult.setText("Your device has been registered.");
+                    mResult.setContentDescription("Your device has been registered.");
 
-                if (result.contains("Registration Successful")) {
-                    //hide register button (and new button if applicable) and show finish button
+                    //hide register button and show finish button
                     mRegisterButton = (Button) findViewById(R.id.email_sign_in_button);
                     mRegisterButton.setVisibility(View.GONE);
                     mFinishButton = (Button) findViewById(R.id.finish_button);
                     mFinishButton.setVisibility(View.VISIBLE);
                     mFinishButton.setText("Finish");
                     mFinishButton.setOnClickListener(finishClickHandler);
-                    mNewButton = (Button) findViewById(R.id.new_device_button);
-                    mNewButton.setVisibility(View.GONE);
-                    //save participantID and email in sharedpreferences and ACRA
-                    int i = result.lastIndexOf("ID: ");
-                    String partID = result.substring(i+4, result.length());
+
+                    //save participantID and home zipcode  in sharedpreferences and ACRA
                     preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
                     preferenceEditor = preferenceSettings.edit();
                     preferenceEditor.putBoolean("registered", true);
+                    int i = result.lastIndexOf("ACCESSCODE=");
+                    String partID = result.substring(i+11, i+19);
                     preferenceEditor.putString("partID", partID);
-                    preferenceEditor.putString("emailAddress", mEmail);
+                    int j = result.lastIndexOf("ZIP=");
+                    String homeZIP = result.substring(j+5, result.length());
+                    preferenceEditor.putString("homeZIP", homeZIP);
                     preferenceEditor.apply();
                     ACRA.getErrorReporter().putCustomData("partID", partID);
                     ACRA.getErrorReporter().putCustomData("installationID", Installation.id(getBaseContext()));
 
-                } else if (result.contains("This device is already registered")) {
-                    //set shared preferences and show finish button
+                    //convert homezip to latlng and save
+                    mAuthTask2 = new GeoCodeTask(homeZIP);
+                    mAuthTask2.execute((Void) null);
+
+                } else if (result.contains("ERROR1")) {
+                    //ID is not in db
+                } else if (result.contains("ERROR2")) {
+                    //emails do not match
+                } else if (result.contains("ERROR3")) {
+                    //need to verify email
+                } else if (result.contains("ERROR4")) {
+                    //device has already been registered somehow
+
+                    mResult.setText("Your device has already been registered. Click Finish to continue.");
+                    mResult.setContentDescription("Your device has already been registered. Click Finish to continue.");
+
+                    //hide register button and show finish button
+                    mRegisterButton = (Button) findViewById(R.id.email_sign_in_button);
+                    mRegisterButton.setVisibility(View.GONE);
+                    mFinishButton = (Button) findViewById(R.id.finish_button);
+                    mFinishButton.setVisibility(View.VISIBLE);
+                    mFinishButton.setText("Finish");
+                    mFinishButton.setOnClickListener(finishClickHandler);
+
+
+                    //save ID and ZIP
                     preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
                     preferenceEditor = preferenceSettings.edit();
                     preferenceEditor.putBoolean("registered", true);
+                    int i = result.lastIndexOf("ACCESSCODE=");
+                    String partID = result.substring(i+11, i+19);
+                    preferenceEditor.putString("partID", partID);
+                    int j = result.lastIndexOf("ZIP=");
+                    String homeZIP = result.substring(j+5, result.length());
+                    preferenceEditor.putString("homeZIP", homeZIP);
                     preferenceEditor.apply();
-                    mRegisterButton = (Button) findViewById(R.id.email_sign_in_button);
-                    mRegisterButton.setVisibility(View.GONE);
-                    mFinishButton = (Button) findViewById(R.id.finish_button);
-                    mFinishButton.setVisibility(View.VISIBLE);
-                    mFinishButton.setOnClickListener(finishClickHandler);
-                    mNewButton = (Button) findViewById(R.id.new_device_button);
-                    mNewButton.setVisibility(View.GONE);
+                    ACRA.getErrorReporter().putCustomData("partID", partID);
+                    ACRA.getErrorReporter().putCustomData("installationID", Installation.id(getBaseContext()));
 
-                } else if (result.contains("That email address is already registered")) {
-                    //show button to register new device and finish button, hide register button
-                    mRegisterButton = (Button) findViewById(R.id.email_sign_in_button);
-                    mRegisterButton.setVisibility(View.GONE);
-                    mNewButton = (Button) findViewById(R.id.new_device_button);
-                    mNewButton.setVisibility(View.VISIBLE);
-                    mNewButton.setOnClickListener(new OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            //runs script again with "new device flag"
-                            registerNewDevice(mEmail);
-                        }
-                    });
-                    mFinishButton = (Button) findViewById(R.id.finish_button);
-                    mFinishButton.setVisibility(View.VISIBLE);
-                    mFinishButton.setText("Cancel");
-                    mFinishButton.setOnClickListener(finishClickHandler);
+                    //convert homezip to latlng and save
+                    mAuthTask2 = new GeoCodeTask(homeZIP);
+                    mAuthTask2.execute((Void) null);
 
-
-                } else if (result.contains("Unable to Complete Registration")) {
-
+                } else if (result.contains("ERROR5")) {
+                    //device not added to db
+                }else if (result.contains("ERROR6")) {
+                    //device associated with another ID
+                }else if (result.contains("ERROR7")) {
+                    //user is banned
                 }
 
             } else {
-                mFnameView.setError("There was an error");
-                mFnameView.requestFocus();
+                mAccessCodeView.setError("There was an error. Please try again.");
+                mAccessCodeView.requestFocus();
             }
         }
 
@@ -390,6 +425,8 @@ public class RegisterActivity extends Activity {
 
 
     }
+
+
 
     /**
      * Click listener for the Finish button (displays Finish or Cancel depending on circumstances).
@@ -412,17 +449,6 @@ public class RegisterActivity extends Activity {
         return (isConnected);
     }
 
-    /**
-     * When email address is already registered, runs the AsyncTask again with the email address
-     * provided and the newDevice flag set to true;
-     * @param email
-     */
-    private void registerNewDevice(String email) {
-        showProgress(true);
-        String androidId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
-        mAuthTask = new UserLoginTask(email, null, Installation.id(this), androidId, true);
-        mAuthTask.execute((Void) null);
-    }
 
     /**Checks if the device is registered. */
     private boolean Registered(){
@@ -430,6 +456,81 @@ public class RegisterActivity extends Activity {
         preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
         return preferenceSettings.getBoolean("registered", false);
     }
+
+
+    public class GeoCodeTask extends AsyncTask<Void, Void, Boolean> {
+
+        private final String mHomeZIP;
+        private String result2;
+
+        GeoCodeTask(String homeZIP) {
+            mHomeZIP = homeZIP;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            //use Goolgle Maps geocode service to get latlng
+
+            try {
+                URL url = new URL("http://maps.googleapis.com/maps/api/geocode/json?address="+mHomeZIP);
+                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                con.setChunkedStreamingMode(0);
+
+                if (con.getResponseCode() == 200) {
+
+                    BufferedReader reader = null;
+                    StringBuilder stringBuilder;
+                    reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                    stringBuilder = new StringBuilder();
+                    String line = null;
+                    while ((line = reader.readLine()) != null) {
+                        stringBuilder.append("\n"+line);
+                    }
+                    String in = stringBuilder.toString();
+                    //https://www.tutorialspoint.com/android/android_json_parser.htm
+                    JSONObject reader1 = new JSONObject(in);
+                    JSONObject location = reader1.getJSONObject("location");
+                    String lat = location.getString("lat");
+                    String lng = location.getString("long");
+
+                    result2 = lat+","+lng;
+
+                    con.disconnect();
+                    return true;
+                } else {
+                    con.disconnect();
+                    return false;
+                }
+
+            } catch (Exception ex) {
+                result2 = "37.0105307,-122.1178261"; //santa cruz is default
+                return false;
+            }
+
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            mAuthTask2 = null;
+
+           if (success) {
+               preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+               preferenceEditor = preferenceSettings.edit();
+               preferenceEditor.putString("homeZIPlatlng", result2);
+               preferenceEditor.apply();
+           }
+        }
+
+        @Override
+        protected void onCancelled() {
+            mAuthTask2 = null;
+
+        }
+
+
+    }
+
+
 
 }
 

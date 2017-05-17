@@ -14,25 +14,22 @@
     <integer name="ga_sessionTimeout">300</integer-->
 
     <!-- The screen names that will appear in reports -->
-    <screenName name="edu.ucsc.psyc_files.microreport.BulletinBoard">
+    <screenName name="edu.ucsc.sites.microreport.BulletinBoard">
         Good News
     </screenName>
-    <screenName name="edu.ucsc.psyc_files.microreport.ReportActivity">
+    <screenName name="edu.ucsc.sites.microreport.ReportActivity">
         Submit a Report
     </screenName>
-    <screenName name="edu.ucsc.psyc_files.microreport.FeedbackActivity">
-        Give Feedback
-    </screenName>
-    <screenName name="edu.ucsc.psyc_files.microreport.HelpActivity">
+    <screenName name="edu.ucsc.sites.microreport.SurveyActivity">
         Resources
     </screenName>
-    <screenName name="edu.ucsc.psyc_files.microreport.RegisterActivity">
+    <screenName name="edu.ucsc.sites.microreport.RegisterActivity">
         Registration
     </screenName>
-    <screenName name="edu.ucsc.psyc_files.microreport.MainActivity">
+    <screenName name="edu.ucsc.sites.microreport.MainActivity">
         Main
     </screenName>
-    <screenName name="edu.ucsc.psyc_files.microreport.ConfirmReport">
+    <screenName name="edu.ucsc.sites.microreport.ConfirmReport">
         Confirm Report
     </screenName>
 </resources>

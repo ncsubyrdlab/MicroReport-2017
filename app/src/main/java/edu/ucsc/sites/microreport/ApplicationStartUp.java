@@ -1,4 +1,4 @@
-package edu.ucsc.psyc_files.microreport;
+package edu.ucsc.sites.microreport;
 
 import android.app.AlarmManager;
 import android.app.Application;
@@ -26,13 +26,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 /**
- * Sets up ACRA error reporting, Google Analytics, and the service to check for notifications for
- * Good News. Also checks if the installation has been registered.
+ * Sets up ACRA error reporting, Google Analytics. Also checks if the installation has been registered.
+ * Removed notification service and changed error reporting; check registration only looks for partID
  */
 @ReportsCrashes(mode = ReportingInteractionMode.TOAST,
         forceCloseDialogAfterToast = false,
         resToastText = R.string.crash_toast_text,
-        formUri = "http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/logerrors.php",
+        formUri = "http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/v2/logerrors.php",
         disableSSLCertValidation = true,
         logcatArguments = { "-t", "100", "-v", "long", "ActivityManager:I", "MicroReport:D", "*:S" },
         additionalSharedPreferences={"microreport_settings"},
@@ -46,6 +46,8 @@ public class ApplicationStartUp extends Application {
     public static Tracker tracker;
     String partID;
     String installationID;
+    SharedPreferences preferenceSettings;
+    SharedPreferences.Editor preferenceEditor;
 
     /**
      * Initiates registration check, ACRA and Google Analytics set-up
@@ -55,7 +57,6 @@ public class ApplicationStartUp extends Application {
         super.onCreate();
         //get participant ID for registration check
         installationID = Installation.id(this);
-        SharedPreferences preferenceSettings;
         preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
         partID = preferenceSettings.getString("partID", "false");
 
@@ -64,6 +65,7 @@ public class ApplicationStartUp extends Application {
 
          //set up ACRA and adds installation ID to custom fields
         ACRA.init(this);
+        ACRA.getErrorReporter().putCustomData("partID", partID);
         ACRA.getErrorReporter().putCustomData("InstallationID", installationID);
         ACRA.getErrorReporter().putCustomData("InstallationType", "AndroidApp2.0");
 
@@ -73,16 +75,10 @@ public class ApplicationStartUp extends Application {
         tracker = analytics.newTracker("UA-58131743-2");
         tracker.enableExceptionReporting(true);
         tracker.enableAutoActivityTracking(true);
-        tracker.set("&uid", installationID);
+        tracker.set("&uid", partID);
 
-        //check for notifications after 2 minutes and every 23 hours
-        Intent notificationIntent = new Intent(this, NotificationService.class);
-        PendingIntent pi = PendingIntent.getService(this, 0,notificationIntent, 0);
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        //restart the alarm
-        alarmManager.cancel(pi);
-        //alarmManager.setInexactRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + 30000, 60000, pi);
-        alarmManager.setInexactRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime()+120000, 82800000, pi);
+        //compute total points
+        new getPoints().execute();
 
     }
 
@@ -102,8 +98,7 @@ public class ApplicationStartUp extends Application {
             }
 
             try {
-                //todo also log access here?
-                URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/check_registration.php");
+                URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/v2/check_registration.php");
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
                 con.setDoOutput(true);
                 con.setChunkedStreamingMode(0);
@@ -114,7 +109,7 @@ public class ApplicationStartUp extends Application {
                 }
 
                 OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
-                out.write("partID="+partID.trim()+"&installationID="+installationID); //trim whitespace
+                out.write("partID=" + partID.trim() + "&installationID=" + installationID); //trim whitespace
                 out.close();
 
                 if (con.getResponseCode() == 200) {
@@ -141,8 +136,6 @@ public class ApplicationStartUp extends Application {
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
-            SharedPreferences preferenceSettings;
-            SharedPreferences.Editor preferenceEditor;
             preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
             preferenceEditor = preferenceSettings.edit();
             if (result == "true") {
@@ -152,6 +145,7 @@ public class ApplicationStartUp extends Application {
 
         }
 
+    }
         /**Checks whether the device is connected to an internet network. Does not necessarily ensure
          * that the internet is available (for example, if there is a login screen).
          * @return true if connected to a network, otherwise false*/
@@ -162,5 +156,58 @@ public class ApplicationStartUp extends Application {
                     activeNetwork.isConnected();
             return (isConnected);
         }
+
+
+    //gets participant's reward points and saves
+    private class getPoints extends AsyncTask<Void, Void, String> {
+        @Override
+        protected String doInBackground(Void... params) {
+            if (!isNetworkConnected()) {
+                //cancel if network is not connected
+                return "unavailable";
+            }
+
+            try {
+                URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/v2/compute_points.php");
+                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                con.setDoOutput(true);
+                con.setChunkedStreamingMode(0);
+
+                OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
+                out.write("partID=" + partID.trim()); //trim whitespace
+                out.close();
+
+                if (con.getResponseCode() == 200) {
+                    //the php file will echo number of points
+                    BufferedReader reader = null;
+                    StringBuilder stringBuilder;
+                    reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                    stringBuilder = new StringBuilder();
+                    String line = null;
+                    while ((line = reader.readLine()) != null) {
+                        stringBuilder.append(line);
+                    }
+                    String result = stringBuilder.toString();
+                    return result;
+                } else {
+                    return con.getResponseMessage();
+                }
+
+            } catch (Exception ex) {
+                return ex.toString();
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            //add points to sharedpreferences
+            preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+            preferenceEditor = preferenceSettings.edit();
+            preferenceEditor.putString("points", result);
+            preferenceEditor.apply();
+
+        }
+
     }
 }

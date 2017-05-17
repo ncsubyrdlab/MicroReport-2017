@@ -5,7 +5,7 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingBottom="@dimen/activity_vertical_margin"
-    tools:context="edu.ucsc.psyc_files.microreport.RegisterActivity"
+    tools:context=".RegisterActivity"
     style="@style/UCSCBlue">
 
     <!-- Login progress -->
@@ -29,7 +29,7 @@
                 android:contentDescription="@string/registersub"
                 style="@android:style/TextAppearance.Medium"
                 android:gravity="center_horizontal" android:autoLink="all"/>
-            <EditText android:id="@+id/fname" android:layout_width="match_parent"
+            <EditText android:id="@+id/access_code" android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:hint="@string/prompt_name"
                 android:imeActionId="@+id/login" android:imeActionLabel="@string/action_sign_in"
                 android:imeOptions="actionUnspecified" android:inputType="textNoSuggestions"
@@ -55,11 +55,7 @@
                 android:textStyle="bold" android:contentDescription="@string/finish_button"
                 android:visibility="gone"/>
 
-            <Button android:id="@+id/new_device_button" style="?android:textAppearanceSmall"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="16dp" android:text="@string/new_device_button"
-                android:textStyle="bold" android:contentDescription="@string/new_device_button"
-                android:visibility="gone"/>
+
         </LinearLayout>
     </ScrollView>
 

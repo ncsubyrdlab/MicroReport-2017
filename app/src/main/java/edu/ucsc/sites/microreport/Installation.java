@@ -1,4 +1,4 @@
-package edu.ucsc.psyc_files.microreport;
+package edu.ucsc.sites.microreport;
 
 import android.content.Context;
 

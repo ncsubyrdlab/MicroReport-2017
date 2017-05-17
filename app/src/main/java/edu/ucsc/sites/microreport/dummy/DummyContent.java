@@ -1,4 +1,4 @@
-package edu.ucsc.psyc_files.microreport.dummy;
+package edu.ucsc.sites.microreport.dummy;
 
 import java.util.ArrayList;
 import java.util.HashMap;

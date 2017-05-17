@@ -1,8 +1,9 @@
-package edu.ucsc.psyc_files.microreport;
+package edu.ucsc.sites.microreport;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -38,6 +39,7 @@ import java.util.TimeZone;
 
 /**
  * The Good News board displays study information and positive resources using Cards and RecyclerView.
+ * v2: changed this to display the blog
  */
 public class BulletinBoard extends Activity {
     private RecyclerView mRecyclerView;
@@ -69,7 +71,6 @@ public class BulletinBoard extends Activity {
             public void onRefresh() {
                 //clear news items
                 news.clear();
-                news.add(new NewsItem("Submit Good News", getBaseContext().getResources().getString(R.string.good_news), "mailto:microreport-goodnews-group@ucsc.edu", new Date()));
                 //refresh items
                 new getNews().execute();
             }
@@ -79,12 +80,15 @@ public class BulletinBoard extends Activity {
         mSwipeRefreshLayout.setRefreshing(true); //doesn't show progress icon
         new getNews().execute();
         news = new ArrayList<NewsItem>();
-        news.add(new NewsItem("Submit Good News", this.getResources().getString(R.string.good_news), "mailto:microreport-goodnews-group@ucsc.edu", new Date()));
         mAdapter = new MyNewsAdapter(news);
         mRecyclerView.setAdapter(mAdapter);
 
         //navigation drawer
         String[] menuList = getResources().getStringArray(R.array.menu);
+        SharedPreferences preferenceSettings;
+        preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+        String points = preferenceSettings.getString("points", "temporarily unavailable");
+        menuList[4] = menuList[4] + points;
         nav = (ListView) findViewById(R.id.navigation_drawer);
         nav.setAdapter(new ArrayAdapter<String>(this, R.layout.drawer_list_item, menuList));
         nav.setOnItemClickListener(new DrawerItemClickListener());
@@ -109,7 +113,7 @@ public class BulletinBoard extends Activity {
     }
 
     /**
-     * Connects to the MicroReport Good News Google Group and downloads the RSS feed into NewsItem
+     * Connects to the blog and downloads the RSS feed into NewsItem
      * objects. Updates adapter and turns off progress icon (for refresh-on-swipe). If there is an
      * error, a card is created that displays the exception text.
      * XML parsing based on https://androidcookbook.com/Recipe.seam?recipeId=2217
@@ -124,7 +128,7 @@ public class BulletinBoard extends Activity {
             }
 
             try {
-                URL url = new URL("https://groups.google.com/a/ucsc.edu/forum/feed/microreport-goodnews-group/msgs/rss.xml?num=50");
+                URL url = new URL("https://microreport.sites.ucsc.edu/feed/");
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
                 if (con.getResponseCode() == 200) {
@@ -255,17 +259,21 @@ public class BulletinBoard extends Activity {
                 startActivity(intent);
                 break;
             case 2:
-                intent = new Intent(this, HelpActivity.class);
+                intent = new Intent(this, SurveyActivity.class);
                 startActivity(intent);
                 break;
             case 3:
-                intent = new Intent(this, FeedbackActivity.class);
-                startActivity(intent);
-                break;
-            case 4:
-                Uri webpage = Uri.parse("http://people.ucsc.edu/~cmbyrd/microaggressionstudy.html");
+                Uri webpage = Uri.parse("http://microreport.sites.ucsc.edu");
                 intent = new Intent(Intent.ACTION_VIEW, webpage);
                 startActivity(intent);
+            case 4:
+                SharedPreferences preferenceSettings;
+                preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+                String partID = preferenceSettings.getString("partID", "false");
+                Uri webpage2 = Uri.parse("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/v2/redeem_points.php?accesscode="+partID);
+                intent = new Intent(Intent.ACTION_VIEW, webpage2);
+                startActivity(intent);
+                break;
             default:
                 break;
         }
