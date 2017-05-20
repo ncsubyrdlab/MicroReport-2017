@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.location.Location;
-import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -38,7 +37,6 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
@@ -93,7 +91,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
     private ActionBarDrawerToggle mDrawerToggle;
     private ArrayList<Report> reports;
     private String partID;
-    private String homeZIPlatlng;
+    private String homeZIP;
     private CameraPosition position;
     private Location mCurrentLocation;
     private GoogleApiClient mGoogleApiClient;
@@ -140,7 +138,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
                     //todo: check age of file
 
                     //get home zipcode
-                    homeZIPlatlng = preferenceSettings.getString("homeZIPlatlng", "36.991386,-122.060872");
+                    homeZIP = preferenceSettings.getString("homeZIP", "36.991386,-122.060872");
 
                     //set up location client
                     buildGoogleApiClient();
@@ -156,27 +154,27 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
                         mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(
                                 mGoogleApiClient);
                         if (mCurrentLocation == null) {
-                            Toast.makeText(this, "location: null", Toast.LENGTH_SHORT).show();
+                            //Toast.makeText(this, "location: null", Toast.LENGTH_SHORT).show();
                             //try again
                             mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(
                                     mGoogleApiClient);}
-                        Toast.makeText(this, "getting location: "+mCurrentLocation, Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(this, "getting location: "+mCurrentLocation, Toast.LENGTH_SHORT).show();
 
                         if (mCurrentLocation == null) {
                             // move map to center of homeZIP
-                            String[] latlong = homeZIPlatlng.split(",");
+                            String[] latlong = homeZIP.split(",");
                             double latitude = Double.parseDouble(latlong[0]);
                             double longitude = Double.parseDouble(latlong[1]);
-                            position = new CameraPosition(new LatLng(latitude, longitude), 14, 0, 0);
-                            Toast.makeText(this, "location: center of zip "+position, Toast.LENGTH_SHORT).show();
+                            position = new CameraPosition(new LatLng(latitude, longitude), 10, 0, 0);
+                            //Toast.makeText(this, "location: center of zip "+position, Toast.LENGTH_SHORT).show();
                         } else {
                             position = new CameraPosition(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()), 14, 0, 0);
-                            Toast.makeText(this, "location: " + position, Toast.LENGTH_SHORT).show();
+                            //Toast.makeText(this, "location: " + position, Toast.LENGTH_SHORT).show();
                         }
 
                     } catch (Exception ex) {
                         position = new CameraPosition(new LatLng(36.991386, -122.060872), 14, 0, 0);
-                        Toast.makeText(this, "exception: "+ex, Toast.LENGTH_LONG).show();
+                        Toast.makeText(this, "error: "+ex, Toast.LENGTH_LONG).show();
                     }
                     reports = new ArrayList<Report>();
                     new getReports().execute();

@@ -42,7 +42,8 @@ import java.net.URL;
  * participant ID and email address. Is displayed as first screen as long as the installation is
  * not registered.
  * Based on Login Activity template.
- * v3: just asks for access code and confirms with users DB, removes new device flag, backend checks that install id is new
+ * v3: just asks for access code and confirms with users DB, removes new device flag, backend checks that install id is new, sends
+ * coordinates of home zup
  */
 public class RegisterActivity extends Activity {
 
@@ -50,7 +51,7 @@ public class RegisterActivity extends Activity {
      * Keep track of the login task to ensure we can cancel it if requested.
      */
     private UserLoginTask mAuthTask = null;
-    private GeoCodeTask mAuthTask2 = null;
+    private GeoCodeTask mAuthTask2 = null; //no longer used, zip lat and long are looked up in DB
 
     // UI references.
     private AutoCompleteTextView mEmailView;
@@ -354,15 +355,12 @@ public class RegisterActivity extends Activity {
                     String partID = result.substring(i+11, i+19);
                     preferenceEditor.putString("partID", partID);
                     int j = result.lastIndexOf("ZIP=");
-                    String homeZIP = result.substring(j+5, result.length());
+                    String homeZIP = result.substring(j+4, result.length()); //latitude, longitude
                     preferenceEditor.putString("homeZIP", homeZIP);
                     preferenceEditor.apply();
                     ACRA.getErrorReporter().putCustomData("partID", partID);
                     ACRA.getErrorReporter().putCustomData("installationID", Installation.id(getBaseContext()));
 
-                    //convert homezip to latlng and save
-                    mAuthTask2 = new GeoCodeTask(homeZIP);
-                    mAuthTask2.execute((Void) null);
 
                 } else if (result.contains("ERROR1")) {
                     //ID is not in db
@@ -393,15 +391,11 @@ public class RegisterActivity extends Activity {
                     String partID = result.substring(i+11, i+19);
                     preferenceEditor.putString("partID", partID);
                     int j = result.lastIndexOf("ZIP=");
-                    String homeZIP = result.substring(j+5, result.length());
+                    String homeZIP = result.substring(j+4, result.length()); //latitude, longitude
                     preferenceEditor.putString("homeZIP", homeZIP);
                     preferenceEditor.apply();
                     ACRA.getErrorReporter().putCustomData("partID", partID);
                     ACRA.getErrorReporter().putCustomData("installationID", Installation.id(getBaseContext()));
-
-                    //convert homezip to latlng and save
-                    mAuthTask2 = new GeoCodeTask(homeZIP);
-                    mAuthTask2.execute((Void) null);
 
                 } else if (result.contains("ERROR5")) {
                     //device not added to db
@@ -458,6 +452,7 @@ public class RegisterActivity extends Activity {
     }
 
 
+    //not used anymore
     public class GeoCodeTask extends AsyncTask<Void, Void, Boolean> {
 
         private final String mHomeZIP;
