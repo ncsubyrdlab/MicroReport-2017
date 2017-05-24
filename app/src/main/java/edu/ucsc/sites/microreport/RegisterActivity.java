@@ -285,7 +285,7 @@ public class RegisterActivity extends Activity {
                 //con.setRequestProperty("Authorization", basicAuth);
 
                 //get device info
-                String OS = "OS: "+System.getProperty("os.version") + "(" + android.os.Build.VERSION.INCREMENTAL + ")";
+                String OS = "Android OS: "+System.getProperty("os.version") + "(" + android.os.Build.VERSION.INCREMENTAL + ")";
                 String API = "//API: "+android.os.Build.VERSION.SDK_INT;
                 String deviceType = "//Device type: "+android.os.Build.DEVICE;
                 String model = "//Model: "+android.os.Build.MODEL + " ("+ android.os.Build.PRODUCT + ")";

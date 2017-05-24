@@ -26,14 +26,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 /**
- * Sets up ACRA error reporting, Google Analytics. Also checks if the installation has been registered.
- * Removed notification service and changed error reporting; check registration only looks for partID
+ * Sets up ACRA error reporting, Google Analytics. Also checks if the installation has been registered and computes points.
+ * Removed notification service and changed error reporting; check registration only looks for partID and whether banned
  */
 @ReportsCrashes(mode = ReportingInteractionMode.TOAST,
-        forceCloseDialogAfterToast = false,
+        alsoReportToAndroidFramework = false,
         resToastText = R.string.crash_toast_text,
         formUri = "http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/v2/logerrors.php",
-        disableSSLCertValidation = true,
+        //disableSSLCertValidation = true, (doesn't work in updated ACRA)
         logcatArguments = { "-t", "100", "-v", "long", "ActivityManager:I", "MicroReport:D", "*:S" },
         additionalSharedPreferences={"microreport_settings"},
         customReportContent = {ReportField.APP_VERSION_NAME, ReportField.CUSTOM_DATA, ReportField.ANDROID_VERSION,

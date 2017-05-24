@@ -109,10 +109,15 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         if (isNetworkConnected()) {//if network is not connected, don't do anything
+            //compute total points
+            new getPoints().execute();
+
             //check registration status
+            new checkRegistration().execute();
             SharedPreferences preferenceSettings;
             preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
             partID = preferenceSettings.getString("partID", "false");
+
             if (partID.equals("false")) {
                 //go to registration page
                 Intent intent = new Intent(this, RegisterActivity.class);
@@ -1085,6 +1090,124 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         mGoogleApiClient.disconnect();
     }
 
+
+    /**
+     * Contacts the server to check if the participant ID is in the user table. The php file echoes
+     * "true" or "false". The participant ID is taken from SharedPreferences and is "false" if it
+     * has not been set before. The SharedPreference is set after this and the registration activity
+     * and will be cleared if the participant clears the app data.
+     *
+     */
+    private class checkRegistration extends AsyncTask<Void, Void, String> {
+        @Override
+        protected String doInBackground(Void... params) {
+            if (!isNetworkConnected()) {
+                //cancel if network is not connected
+                return "No network connection";
+            }
+
+            try {
+                URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/v2/check_registration.php");
+                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                con.setDoOutput(true);
+                con.setChunkedStreamingMode(0);
+
+                //compare PartID to server
+                if (partID == "false") {
+                    return partID;
+                }
+
+                OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
+                out.write("partID=" + partID.trim() + "&installationID=" + installationID); //trim whitespace
+                out.close();
+
+                if (con.getResponseCode() == 200) {
+                    //the php file will echo "true" or "false"
+                    BufferedReader reader = null;
+                    StringBuilder stringBuilder;
+                    reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                    stringBuilder = new StringBuilder();
+                    String line = null;
+                    while ((line = reader.readLine()) != null) {
+                        stringBuilder.append(line + "\n");
+                    }
+                    String result = stringBuilder.toString();
+                    return result;
+                } else {
+                    return con.getResponseMessage();
+                }
+
+            } catch (Exception ex) {
+                return ex.toString();
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+            preferenceEditor = preferenceSettings.edit();
+            if (result == "true") {
+                preferenceEditor.putBoolean("registered", true);
+            } else preferenceEditor.putBoolean("registered", false);
+            preferenceEditor.apply();
+
+        }
+
+    }
+
+    //gets participant's reward points and saves
+    private class getPoints extends AsyncTask<Void, Void, String> {
+        @Override
+        protected String doInBackground(Void... params) {
+            if (!isNetworkConnected()) {
+                //cancel if network is not connected
+                return "unavailable";
+            }
+
+            try {
+                URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/v2/compute_points.php");
+                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                con.setDoOutput(true);
+                con.setChunkedStreamingMode(0);
+
+                OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
+                out.write("partID=" + partID.trim()); //trim whitespace
+                out.close();
+
+                if (con.getResponseCode() == 200) {
+                    //the php file will echo number of points
+                    BufferedReader reader = null;
+                    StringBuilder stringBuilder;
+                    reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                    stringBuilder = new StringBuilder();
+                    String line = null;
+                    while ((line = reader.readLine()) != null) {
+                        stringBuilder.append(line);
+                    }
+                    String result = stringBuilder.toString();
+                    return result;
+                } else {
+                    return con.getResponseMessage();
+                }
+
+            } catch (Exception ex) {
+                return ex.toString();
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            //add points to sharedpreferences
+            preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+            preferenceEditor = preferenceSettings.edit();
+            preferenceEditor.putString("points", result);
+            preferenceEditor.apply();
+
+        }
+
+    }
 
 }
 
