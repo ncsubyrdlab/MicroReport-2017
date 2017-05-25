@@ -377,7 +377,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
      * ClusterManager. Also sets up the listview in landscape mode.
      * @param mMap
      */
-    public void onMapReady(GoogleMap mMap) {
+    public void onMapReady(final GoogleMap mMap) {
         this.mMap = mMap;
         //add stuff to map
         mMap.setMyLocationEnabled(true); //shows user location
@@ -390,7 +390,12 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         mClusterManager = new MyClusterManager<Report>(this, mMap);
         clusterRenderer = new MyClusterRenderer(this, mMap, mClusterManager);
         mClusterManager.setRenderer(clusterRenderer);
-        mMap.setOnCameraChangeListener(mClusterManager);
+        mMap.setOnCameraIdleListener(new GoogleMap.OnCameraIdleListener(){
+                @Override
+                public void OnCameraIdle() {
+                mClusterManager.onCameraChange(mMap.getCameraPosition());
+                mClusterManager.cluster();
+            }});
         mMap.setOnMarkerClickListener(mClusterManager);
 
         try {
@@ -559,6 +564,9 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
             compareZoom = maxZoom - zoom;
             super.onCameraChange(cameraPosition);
         }
+
+
+
     }
 
     /**My own version of cluster renderer (from clustering utility library)
