@@ -1,15 +1,11 @@
 package edu.ucsc.sites.microreport;
 
-import android.app.AlarmManager;
 import android.app.Application;
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.os.SystemClock;
 
 import com.google.android.gms.analytics.GoogleAnalytics;
 import com.google.android.gms.analytics.Tracker;
@@ -71,10 +67,10 @@ public class ApplicationStartUp extends Application {
 
         //set up Google Analytics
         analytics = GoogleAnalytics.getInstance(this);
-        analytics.setLocalDispatchPeriod(1800);
-        tracker = analytics.newTracker("UA-58131743-2");
+        //analytics.setLocalDispatchPeriod(1800); not sure needed?
+        //tracker = analytics.newTracker("UA-58131743-2"); see getDefaultTracker below
         tracker.enableExceptionReporting(true);
-        tracker.enableAutoActivityTracking(true);
+        //tracker.enableAutoActivityTracking(true); enabled in xml file
         tracker.set("&uid", partID);
 
         //compute total points
@@ -210,4 +206,18 @@ public class ApplicationStartUp extends Application {
         }
 
     }
+    /**
+     * Gets the default {@link Tracker} for this {@link Application}.
+     * @return tracker
+     * https://developers.google.com/analytics/devguides/collection/android/v4/
+     */
+    synchronized public Tracker getDefaultTracker() {
+        // To enable debug logging use: adb shell setprop log.tag.GAv4 DEBUG
+        if (tracker == null) {
+            tracker = analytics.newTracker(R.xml.global_tracker);
+        }
+
+        return tracker;
+    }
+
 }

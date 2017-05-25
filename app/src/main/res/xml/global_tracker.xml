@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ga_trackingId" translatable="false">UA-58131743-2</string>
+    <!-- Enable automatic Activity measurement -->
+    <bool name="ga_autoActivityTracking">true</bool>
+
+    <!-- The screen names that will appear in reports -->
+    <screenName name="edu.ucsc.sites.microreport.BulletinBoard">
+        Blog
+    </screenName>
+    <screenName name="edu.ucsc.sites.microreport.ReportActivity">
+        Submit Report
+    </screenName>
+    <screenName name="edu.ucsc.sites.microreport.SurveyActivity">
+        Surveys
+    </screenName>
+    <screenName name="edu.ucsc.sites.microreport.RegisterActivity">
+        Register
+    </screenName>
+    <screenName name="edu.ucsc.sites.microreport.MainActivity">
+        Main
+    </screenName>
+</resources>

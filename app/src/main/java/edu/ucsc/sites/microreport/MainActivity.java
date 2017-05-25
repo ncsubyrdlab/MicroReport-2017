@@ -29,7 +29,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -83,6 +83,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private MapFragment mMapFragment;  //Google map fragment
+    private GoogleMap mMap;
     private static MyClusterManager<Report> mClusterManager;  //Handles rendering of markers at different zoom levels
     private ReportAdapter adapter;   //handles the list of reports in landscape mode
     private DefaultClusterRenderer<Report> clusterRenderer; //my implementation of Google utility library cluster renderer
@@ -92,9 +93,13 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
     private ArrayList<Report> reports;
     private String partID;
     private String homeZIP;
+    private String installationID;
     private CameraPosition position;
     private Location mCurrentLocation;
     private GoogleApiClient mGoogleApiClient;
+    private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
+    SharedPreferences preferenceSettings;
+    SharedPreferences.Editor preferenceEditor;
 
     /**
      * Opens the main page and displays the reports on a map in clusters based on zoom level.
@@ -114,7 +119,6 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
 
             //check registration status
             new checkRegistration().execute();
-            SharedPreferences preferenceSettings;
             preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
             partID = preferenceSettings.getString("partID", "false");
 
@@ -150,7 +154,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
 
                     //Create a new location client, using the enclosing class to handle callbacks.
                     LocationRequest mLocationRequest = new LocationRequest();
-                    mLocationRequest.setInterval(10000);
+                    mLocationRequest.setInterval(60000);
                     mLocationRequest.setFastestInterval(5000);
                     mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
@@ -374,11 +378,12 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
      * @param mMap
      */
     public void onMapReady(GoogleMap mMap) {
+        this.mMap = mMap;
         //add stuff to map
         mMap.setMyLocationEnabled(true); //shows user location
         UiSettings settings = mMap.getUiSettings();
         settings.setMapToolbarEnabled(false);  //doesn't show toolbar that links to Google Maps app
-        mMap.moveCamera(CameraUpdateFactory.newCameraPosition(position)); //moves camera to campus center
+        mMap.moveCamera(CameraUpdateFactory.newCameraPosition(position)); //moves camera to appropriate location (see onCreate)
         mMap.setInfoWindowAdapter(new MyInfoWindow());  //uses my version of info window
 
         // Initialize the cluster manager and renderer and set up listeners
@@ -420,7 +425,9 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         outState.putParcelableArrayList("reports", reports);
         //Parcelable position = null;
         try {
-           position = mMapFragment.getMap().getCameraPosition();
+
+            position = mMap.getCameraPosition();
+
         }
         catch (NullPointerException ex ){
            position = new CameraPosition(new LatLng(36.991386, -122.060872), 14, 0, 0);
@@ -476,7 +483,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
             item = reports.get(position);
 
         v.setContentDescription(item.getDescription()+item.getTimestamp());
-        mMapFragment.getMap().animateCamera(CameraUpdateFactory.newLatLngZoom(item.getPosition(), 18));
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(item.getPosition(), 18));
             Marker marker = clusterRenderer.getMarker(item);
             if (marker != null) {
                 marker.showInfoWindow();
@@ -689,17 +696,20 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
     }
 
     /**checks that Google Play Services are available
-     * http://www.androiddesignpatterns.com/2013/01/google-play-services-setup.html*/
+     https://stackoverflow.com/questions/31016722/googleplayservicesutil-vs-googleapiavailability**/
     private boolean checkGooglePlay(){
-        int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
-        if (ConnectionResult.SUCCESS == resultCode) {
-            return true;
-        }
-        else {
-            GooglePlayServicesUtil.getErrorDialog(resultCode,this,1001).show();
-            Toast.makeText(this, "Install or update Google Play Services", Toast.LENGTH_LONG).show();
+        GoogleApiAvailability googleAPI = GoogleApiAvailability.getInstance();
+        int result = googleAPI.isGooglePlayServicesAvailable(this);
+        if(result != ConnectionResult.SUCCESS) {
+            if(googleAPI.isUserResolvableError(result)) {
+                googleAPI.getErrorDialog(this, result,
+                        PLAY_SERVICES_RESOLUTION_REQUEST).show();
+            }
+
             return false;
         }
+
+        return true;
     }
 
     /**
@@ -1087,6 +1097,12 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
     @Override
     protected void onStop() {
         super.onStop();
+        mGoogleApiClient.disconnect();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
         mGoogleApiClient.disconnect();
     }
 
