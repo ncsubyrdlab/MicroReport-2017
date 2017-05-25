@@ -40,9 +40,9 @@
     <string name="whathappened">What happened:</string>
     <string name="describehint">Describe what happened (who was involved (no names), what did they do, how did you feel?)</string>
     <string name="describehint2">Describe what happened</string>
-    <string name="location">Location (select <i>Use current location</i>, select a building, or enter a location):</string>
+    <string name="location">Location (select <i>Use current location</i>, and/or describe your location):</string>
     <string name="usecurrentlocation">Use current location</string>
-    <string name="otherlocation">Class name or other location</string>
+    <string name="otherlocation">Describe where you are</string>
     <string name="button_preview">Preview Report</string>
     <string name="cancel">Cancel</string>
     <string name="bother">How much did it bother you?</string>
@@ -54,6 +54,7 @@
     <string name="gender">gender</string>
     <string name="sexual_orientation">sexual orientation</string>
     <string name="something_else">something else</string>
+    <string name="not_sure">I\'m not sure</string>
     <string-array name ="filter_options">
         <item>Filter</item>
         <item>Race</item>

@@ -69,9 +69,9 @@ public class ApplicationStartUp extends Application {
         analytics = GoogleAnalytics.getInstance(this);
         //analytics.setLocalDispatchPeriod(1800); not sure needed?
         //tracker = analytics.newTracker("UA-58131743-2"); see getDefaultTracker below
-        tracker.enableExceptionReporting(true);
+        //tracker.enableExceptionReporting(true); causes crash
         //tracker.enableAutoActivityTracking(true); enabled in xml file
-        tracker.set("&uid", partID);
+        //tracker.set("&uid", partID); causes crash - from old version
 
         //compute total points
         new getPoints().execute();

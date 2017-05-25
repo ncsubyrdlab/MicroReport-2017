@@ -289,11 +289,12 @@ public class RegisterActivity extends Activity {
                 String API = "//API: "+android.os.Build.VERSION.SDK_INT;
                 String deviceType = "//Device type: "+android.os.Build.DEVICE;
                 String model = "//Model: "+android.os.Build.MODEL + " ("+ android.os.Build.PRODUCT + ")";
+                String androidId = "//AndroidID:" + Settings.Secure.getString(getBaseContext().getContentResolver(), Settings.Secure.ANDROID_ID);
 
                 //attempt to register user
                 OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
                 out.write("email=" + Uri.encode(mEmail) + "&ID=" + Uri.encode(mAccessCode) + "&installationID=" + Uri.encode(mInstallid)
-                +"&deviceInfo="+Uri.encode(OS+API+deviceType+model));
+                +"&deviceInfo="+Uri.encode(OS+API+deviceType+model+androidId));
                 out.close();
 
                 if (con.getResponseCode() == 200) {

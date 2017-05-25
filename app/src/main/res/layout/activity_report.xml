@@ -42,13 +42,7 @@
             android:layout_height="wrap_content"
             android:src="@drawable/ic_location_off_black_24dp"/>
         </LinearLayout>
-    <Spinner
-        android:id="@+id/location_spinner"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="16sp"
-        android:layout_marginBottom="12dp"
-        />
+
     <EditText android:id="@+id/locationtextbox"
         android:hint="@string/otherlocation"
         android:layout_width="wrap_content"
@@ -109,6 +103,15 @@
             android:layout_height="wrap_content"
             android:text="@string/something_else"
             android:contentDescription="@string/something_else"
+            android:textSize="16sp"
+            />
+        <CheckBox
+            android:id="@+id/not_sure_check"
+            android:layout_below="@+id/else_check"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/not_sure"
+            android:contentDescription="@string/not_sure"
             android:textSize="16sp"
             />
         </RelativeLayout>

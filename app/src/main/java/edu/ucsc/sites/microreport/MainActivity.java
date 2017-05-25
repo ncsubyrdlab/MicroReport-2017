@@ -150,7 +150,12 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
                     homeZIP = preferenceSettings.getString("homeZIP", "36.991386,-122.060872");
 
                     //set up location client
-                    buildGoogleApiClient();
+                    mGoogleApiClient = new GoogleApiClient.Builder(this)
+                            .addApi(LocationServices.API)
+                            .addConnectionCallbacks(this)
+                            .addOnConnectionFailedListener(this)
+                            .build();
+                    mGoogleApiClient.connect();
 
                     //Create a new location client, using the enclosing class to handle callbacks.
                     LocationRequest mLocationRequest = new LocationRequest();
@@ -174,7 +179,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
                             String[] latlong = homeZIP.split(",");
                             double latitude = Double.parseDouble(latlong[0]);
                             double longitude = Double.parseDouble(latlong[1]);
-                            position = new CameraPosition(new LatLng(latitude, longitude), 10, 0, 0);
+                            position = new CameraPosition(new LatLng(latitude, longitude), 12, 0, 0);
                             //Toast.makeText(this, "location: center of zip "+position, Toast.LENGTH_SHORT).show();
                         } else {
                             position = new CameraPosition(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()), 14, 0, 0);
@@ -316,7 +321,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
             }
 
             list.setAdapter(adapter);
-            adapter.notifyDataSetChanged();
+            //adapter.notifyDataSetChanged();
 
     }
 
@@ -392,8 +397,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         mClusterManager.setRenderer(clusterRenderer);
         mMap.setOnCameraIdleListener(new GoogleMap.OnCameraIdleListener(){
                 @Override
-                public void OnCameraIdle() {
-                mClusterManager.onCameraChange(mMap.getCameraPosition());
+                public void onCameraIdle() {
                 mClusterManager.cluster();
             }});
         mMap.setOnMarkerClickListener(mClusterManager);
@@ -557,14 +561,6 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
             mMap = map;
             maxZoom = mMap.getMaxZoomLevel();
         }
-
-        @Override
-        public void onCameraChange(CameraPosition cameraPosition) {
-            float zoom = cameraPosition.zoom;
-            compareZoom = maxZoom - zoom;
-            super.onCameraChange(cameraPosition);
-        }
-
 
 
     }
@@ -839,17 +835,17 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         //check that the input is actually something
         if (line.contains("Error: ")) {
             reports.add(new Report(new Date().toString(), "Error"+line, "36.991386", "-122.060872", null, false,
-                    false, false, false, false, false));
+                    false, false, false, false, false, false));
             return reports;
         }
         try {
             do {    //take each line and read parts into report object
-                result = line.split("%delim%", 12);
+                result = line.split("%delim%", 13);
                 reports.add(new Report(result[0], result[1]+" ("+result[10]+")", result[2], result[3], result[4], result[4].equals(partID),
                         Boolean.parseBoolean(result[5]), Boolean.parseBoolean(result[6]), Boolean.parseBoolean(result[7]),
-                        Boolean.parseBoolean(result[8]), Boolean.parseBoolean(result[9])));
+                        Boolean.parseBoolean(result[8]), Boolean.parseBoolean(result[9]), Boolean.parseBoolean(result[10])));
                 line = br.readLine();
-            } while (!line.equals("%end%")); //add %end% delimiter to php code?
+            } while (!line.equals("%end%"));
         }
         catch (ArrayIndexOutOfBoundsException ex) { //not sure why this was necessary, it was fine before!
             line = br.readLine();
@@ -872,12 +868,13 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         public final boolean gender;
         public final boolean sex;
         public final boolean other;
+        public final boolean not_sure;
 
 
         public Report(String timestamp, String description, String locationLat, String locationLong, String partID, boolean user_report,
-                      boolean race, boolean culture, boolean gender, boolean sex, boolean other) {
+                      boolean race, boolean culture, boolean gender, boolean sex, boolean other, boolean not_sure) {
             this.timestamp = timestamp;
-            this.description = description;
+            this.description = description; //description and loc_description
             this.locationLat = locationLat;
             this.locationLong = locationLong;
             this.partID = partID;
@@ -887,7 +884,11 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
             this.gender = gender;
             this.sex = sex;
             this.other = other;
+            this.not_sure = not_sure;
         }
+
+        public String getSnippet() {return description; }
+        public String getTitle() {String title = getTimestamp(); return title;}
 
         public String getDescription() {
             return description;
@@ -940,6 +941,10 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
             return other;
         }
 
+        public boolean isNotSure() {
+            return not_sure;
+        }
+
         public boolean isSex() {
             return sex;
         }
@@ -967,6 +972,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
             out.writeString(String.valueOf(isGender()));
             out.writeString(String.valueOf(isSex()));
             out.writeString(String.valueOf(isOther()));
+            out.writeString(String.valueOf(isNotSure()));
         }
 
         @Override
@@ -988,7 +994,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         public static final Parcelable.Creator<Report> CREATOR = new Parcelable.Creator<Report>() {
             public Report createFromParcel(Parcel in) {
                 return new Report(in.readString(), in.readString(), in.readString(), in.readString(), in.readString(), Boolean.parseBoolean(in.readString()),
-                        Boolean.parseBoolean(in.readString()),Boolean.parseBoolean(in.readString()),Boolean.parseBoolean(in.readString()),Boolean.parseBoolean(in.readString()),Boolean.parseBoolean(in.readString()));
+                        Boolean.parseBoolean(in.readString()),Boolean.parseBoolean(in.readString()),Boolean.parseBoolean(in.readString()),Boolean.parseBoolean(in.readString()),Boolean.parseBoolean(in.readString()), Boolean.parseBoolean(in.readString()));
 
             }
 
@@ -1053,14 +1059,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
     }
 
 
-    /**set up location client*/
-    protected synchronized void buildGoogleApiClient() {
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
-                .build();
-    }
+
     /*
      * Called by Location Services when the request to connect the
      * client finishes successfully. Requests last location or tries to connect again
@@ -1077,42 +1076,19 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
     @Override
     public void onConnectionSuspended(int i) {
 
+
     }
     /*
         * Called by Location Services if the attempt to
         * Location Services fails.
         */
-//    @Override
+   @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
-        Toast.makeText(this, "Unable to connect", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Unable to show your current location", Toast.LENGTH_SHORT).show();
     }
 
-    /**
-     * // necessary to implement this even if don't use it
-     * @param location
-     */
-    //@Override
-    public void onLocationChanged(Location location) {
-        mCurrentLocation = location;
 
-    }
-    @Override
-    protected void onStart() {
-        super.onStart();
-        mGoogleApiClient.connect();
-    }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        mGoogleApiClient.disconnect();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        mGoogleApiClient.disconnect();
-    }
 
 
     /**
@@ -1232,6 +1208,19 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         }
 
     }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mGoogleApiClient.disconnect();
+    }
+
 
 }
 
