@@ -21,6 +21,7 @@
 
     <!-- Main page -->
     <string name="app_name">MicroReport</string>
+    <string name = "app_id">60070155589</string>
     <string name="title_activity_help">Surveys</string>
     <string name="sort_A">Sort Ascending</string>
     <string name="sort_D">Sort Descending</string>
@@ -57,13 +58,14 @@
     <string name="not_sure">I\'m not sure</string>
     <string-array name ="filter_options">
         <item>Filter</item>
+        <item>Last 7 Days</item>
         <item>Race</item>
         <item>Culture</item>
         <item>Gender</item>
         <item>Sexual Orientation</item>
-        <item>Other</item>
+        <item>Something Else</item>
+        <item>Not Sure</item>
         <item>My Reports</item>
-        <item>Last Week</item>
     </string-array>
 
     <!--Confirm report popup -->

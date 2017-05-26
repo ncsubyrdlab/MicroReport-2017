@@ -15,7 +15,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -250,57 +249,9 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         //filter reports
 
                 switch (position) {
-                case 1: //race
-                    for (Report i : reports) {
-                        if (i.isRace()) {
-                            new_list.add(i);
-                        }
-                    }
-                    adapter = new ReportAdapter(this, new_list);
-                    break;
-                case 2: //culture
-                    for (Report i : reports) {
-                        if (i.isCulture()) {
-                            new_list.add(i);
-                        }
-                    }
-                    adapter = new ReportAdapter(this, new_list);
-                    break;
-                case 3: //gender
-                    for (Report i : reports) {
-                        if (i.isGender()) {
-                            new_list.add(i);
-                        }
-                    }
-                    adapter = new ReportAdapter(this, new_list);
-                    break;
-                case 4: //sexual orientaiton
-                    for (Report i : reports) {
-                        if (i.isSex()) {
-                            new_list.add(i);
-                        }
-                    }
-                    adapter = new ReportAdapter(this, new_list);
-                    break;
-                case 5: //other
-                    for (Report i : reports) {
-                        if (i.isOther()) {
-                            new_list.add(i);
-                        }
-                    }
-                    adapter = new ReportAdapter(this, new_list);
-                    break;
-                case 6: //my reports
-                    for (Report i : reports) {
-                        if (i.isUser_report()) {
-                            new_list.add(i);
-                        }
-                    }
-                    adapter = new ReportAdapter(this, new_list);
-                    break;
-                    case 7: //last week
+                    case 1: //last week
                         long week = System.currentTimeMillis() - 604800000;
-                        Log.d("week timestamp", String.valueOf(week));
+                        //Log.d("week timestamp", String.valueOf(week));
                         for (Report i : reports) {
                             if ((Long.parseLong(i.getRawTimestamp())*1000 - week) > 0) {
                                 new_list.add(i);
@@ -308,6 +259,63 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
                         }
                         adapter = new ReportAdapter(this, new_list);
                         break;
+                    case 2: //race
+                    for (Report i : reports) {
+                        if (i.isRace()) {
+                            new_list.add(i);
+                        }
+                    }
+                    adapter = new ReportAdapter(this, new_list);
+                    break;
+                case 3: //culture
+                    for (Report i : reports) {
+                        if (i.isCulture()) {
+                            new_list.add(i);
+                        }
+                    }
+                    adapter = new ReportAdapter(this, new_list);
+                    break;
+                case 4: //gender
+                    for (Report i : reports) {
+                        if (i.isGender()) {
+                            new_list.add(i);
+                        }
+                    }
+                    adapter = new ReportAdapter(this, new_list);
+                    break;
+                case 5: //sexual orientaiton
+                    for (Report i : reports) {
+                        if (i.isSex()) {
+                            new_list.add(i);
+                        }
+                    }
+                    adapter = new ReportAdapter(this, new_list);
+                    break;
+                case 6: //other
+                        for (Report i : reports) {
+                            if (i.isOther()) {
+                                new_list.add(i);
+                            }
+                        }
+                        adapter = new ReportAdapter(this, new_list);
+                        break;
+                    case 7: //not sure
+                        for (Report i : reports) {
+                            if (i.isNotSure()) {
+                                new_list.add(i);
+                            }
+                        }
+                        adapter = new ReportAdapter(this, new_list);
+                        break;
+                    case 8: //my reports
+                    for (Report i : reports) {
+                        if (i.isUser_report()) {
+                            new_list.add(i);
+                        }
+                    }
+                    adapter = new ReportAdapter(this, new_list);
+                    break;
+
                 default:
                     //no list
                     if (reports.isEmpty()) {
@@ -527,7 +535,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
               }
 
              //check for and try to post saved reports
-             SharedPreferences preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
+             //SharedPreferences preferenceSettings = getSharedPreferences("microreport_settings", MODE_PRIVATE);
              Set<String> savedReports = new HashSet();
              savedReports.addAll(preferenceSettings.getStringSet("savedReports", savedReports));
             //loop through and get output
@@ -537,9 +545,9 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
              }
              //clear array and preferences
              savedReports.clear();
-             SharedPreferences.Editor preferenceEditor = preferenceSettings.edit();
+             //SharedPreferences.Editor preferenceEditor = preferenceSettings.edit();
              preferenceEditor.remove("savedReports");
-             preferenceEditor.commit();
+             preferenceEditor.apply();
 
              //reload activity
              Intent intent = new Intent(this, MainActivity.class);
@@ -841,7 +849,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
         try {
             do {    //take each line and read parts into report object
                 result = line.split("%delim%", 13);
-                reports.add(new Report(result[0], result[1]+" ("+result[10]+")", result[2], result[3], result[4], result[4].equals(partID),
+                reports.add(new Report(result[0], result[1]+" ["+result[11]+"]", result[2], result[3], result[4], result[4].equals(partID),
                         Boolean.parseBoolean(result[5]), Boolean.parseBoolean(result[6]), Boolean.parseBoolean(result[7]),
                         Boolean.parseBoolean(result[8]), Boolean.parseBoolean(result[9]), Boolean.parseBoolean(result[10])));
                 line = br.readLine();
@@ -1020,7 +1028,7 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
 
             String result;
             try {
-                URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/report.php");
+                URL url = new URL("http://ec2-52-26-239-139.us-west-2.compute.amazonaws.com/v2/report.php");
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
                 con.setDoOutput(true);
                 con.setChunkedStreamingMode(0);
@@ -1212,6 +1220,11 @@ public class MainActivity extends Activity implements OnMapReadyCallback, Adapte
     @Override
     protected void onStart() {
         super.onStart();
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build();
         mGoogleApiClient.connect();
     }
 
