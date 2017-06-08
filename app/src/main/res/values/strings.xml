@@ -57,7 +57,7 @@
     <string name="something_else">something else</string>
     <string name="not_sure">I\'m not sure</string>
     <string-array name ="filter_options">
-        <item>Filter</item>
+        <item><i>Filter</i></item>
         <item>Last 7 Days</item>
         <item>Race</item>
         <item>Culture</item>
